@@ -85,7 +85,7 @@ details.card summary{font-weight:700;cursor:pointer}
 #tbar.show{display:flex}
 #tbar input{flex:1;font-size:17px;padding:9px 10px;border-radius:10px;border:0;font-family:inherit}
 .annoB{margin-top:8px;width:100%;padding:11px}
-.stripe,.step{display:none}
+.stripe,.step,.tip0{display:none}
 .chip.sel{background:var(--c);color:#fff;border-color:var(--c)}
 #out{position:fixed;inset:0;background:#111;z-index:30;display:none;flex-direction:column;color:#fff}
 #out.show{display:flex}
@@ -149,6 +149,7 @@ details.card summary{color:var(--c);letter-spacing:1px}
 .set input,.set select{background:#f1f5f2;border:1px solid transparent;border-radius:8px}
 .set input[type=range],.set input[type=checkbox]{accent-color:var(--c)}
 #out .hd .pri{background:var(--c3)}
+.tip0{display:block;font-size:12.5px;color:var(--mute);background:#fff;border:1px dashed #c9d8cd;border-radius:10px;padding:7px 10px;margin-top:-2px;line-height:1.5}
 </style>
 <script>
 window.__errs=[];
@@ -165,6 +166,7 @@ window.addEventListener('unhandledrejection',function(e){__showErr('promise: '+(
     <label class="btn pri">📷 拍照<input id="cam" type="file" accept="image/*" capture="environment"></label>
     <label class="btn">🖼 相簿多選<input id="pick" type="file" accept="image/*" multiple></label>
   </div>
+  <div class="tip0">要用廣角／長焦：請直接開手機相機拍，再按「相簿多選」匯入</div>
   <div class="strip" id="strip"></div>
   <div class="prev" id="prev"><div class="empty">按「拍照」會開啟手機原相機<br>或用「相簿多選」一次匯入現場拍好的照片</div></div>
   <div class="warn" id="warn"></div>
@@ -213,7 +215,7 @@ const LOGO_C="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgM
 const FONT='"Noto Sans TC","Noto Sans CJK TC","PingFang TC","Microsoft JhengHei",sans-serif';
 
 const TPL={
-ys:{name:'永昇驗證科技',short:'永昇',color:'#2b6a3c',ratio:[4,3],ratioTxt:'橫式 4:3',logo:LOGO_C,boxW:62,noTime:true,
+ys:{name:'永昇驗證科技',short:'永昇',color:'#2b6a3c',ratio:[4,3],ratioTxt:'橫式 4:3',logo:LOGO_C,boxW:62,noTime:true,titleCenter:true,
     fields:[
       {k:'project',label:'建案名',title:true,ph:'例：公學院'},
       {k:'client',label:'客戶名稱',ph:'例：陳先生-633號'},
@@ -339,7 +341,9 @@ function drawWM(x,W,H,p){
   const title=t.titlePrefix+((t.fields.find(f=>f.title)&&p.f[t.fields.find(f=>f.title).k])||'');
   let tfs=fs*1.08;x.font=`700 ${tfs}px ${FONT}`;const tx=lx+ls+1.2*u,tmax=X+bw-tx-pd;
   while(x.measureText(title).width>tmax&&tfs>fs*0.6){tfs*=0.94;x.font=`700 ${tfs}px ${FONT}`}
-  x.fillStyle='#fff';x.fillText(title,tx,Y+headH/2+u*0.15);
+  x.fillStyle='#fff';
+  if(t.titleCenter){x.textAlign='center';x.fillText(title,(tx+X+bw-pd)/2,Y+headH/2+u*0.15);x.textAlign='left'}
+  else x.fillText(title,tx,Y+headH/2+u*0.15);
   // rows
   x.font=`${fs}px ${FONT}`;x.fillStyle='#1d1d1d';let yy=Y+headH+pd*0.7+lh/2;
   rows.forEach((r,i)=>{x.fillText(r[0]+'：',X+pd,yy);lines[i].forEach(l=>{x.fillText(l,X+pd+lw,yy);yy+=lh})});
