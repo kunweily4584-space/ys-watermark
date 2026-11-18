@@ -86,6 +86,11 @@ details.card summary{font-weight:700;cursor:pointer}
 #tbar input{flex:1;font-size:17px;padding:9px 10px;border-radius:10px;border:0;font-family:inherit}
 .annoB{margin-top:8px;width:100%;padding:11px}
 .stripe,.step,.tip0{display:none}
+.look{display:none;gap:12px;margin-top:8px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 12px}
+.look.show{display:flex}
+.look label{flex:1;font-size:13px;color:var(--mute);display:flex;flex-direction:column;gap:2px}
+.look b{color:var(--ink)}
+.look input{width:100%;accent-color:var(--c)}
 .chip.sel{background:var(--c);color:#fff;border-color:var(--c)}
 #out{position:fixed;inset:0;background:#111;z-index:30;display:none;flex-direction:column;color:#fff}
 #out.show{display:flex}
@@ -166,11 +171,15 @@ window.addEventListener('unhandledrejection',function(e){__showErr('promise: '+(
     <label class="btn pri">📷 拍照<input id="cam" type="file" accept="image/*" capture="environment"></label>
     <label class="btn">🖼 相簿多選<input id="pick" type="file" accept="image/*" multiple></label>
   </div>
-  <div class="tip0">要用廣角／長焦：請直接開手機相機拍，再按「相簿多選」匯入</div>
+  <div class="tip0">📷 需要<b>長焦、廣角</b>時：請用手機內建相機拍，拍完按「相簿多選」一次匯入（App 的「拍照」只能用主鏡頭）</div>
   <div class="strip" id="strip"></div>
   <div class="prev" id="prev"><div class="empty">按「拍照」會開啟手機原相機<br>或用「相簿多選」一次匯入現場拍好的照片</div></div>
   <div class="warn" id="warn"></div>
   <button class="btn annoB" id="annoB" style="display:none">✏ 標註缺失（框選・箭頭・文字）</button>
+  <div class="look" id="look">
+    <label><span>水印大小 <b id="qS">100%</b></span><input type="range" id="qSi" min="50" max="200" step="5"></label>
+    <label><span>Logo 大小 <b id="qL">100%</b></span><input type="range" id="qLi" min="50" max="250" step="5"></label>
+  </div>
   <div class="off" id="offw"><span>裁切位置</span><input type="range" id="off" min="0" max="100" value="50"></div>
 
   <div class="step"><b>02</b>填寫水印資訊</div>
@@ -232,7 +241,7 @@ ys:{name:'永昇驗證科技',short:'永昇',color:'#2b6a3c',ratio:[4,3],ratioTx
 /* ---------- state ---------- */
 const LS=(()=>{try{const l=window.localStorage;l.setItem('__t','1');l.removeItem('__t');return l}catch(e){return null}})();
 const store={get(k,d){try{if(!LS)return d;const v=LS.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{if(LS)LS.setItem(k,JSON.stringify(v))}catch(e){}}};
-const DEF_SET={keepOrig:true,longEdge:2560,quality:0.88,scale:100,opacity:0.87,labels:{},timeLabel:'拍攝時間'};
+const DEF_SET={keepOrig:true,longEdge:2560,quality:0.88,scale:100,logo:100,opacity:0.87,labels:{},timeLabel:'拍攝時間'};
 let S=store.get('wm_state_ys',null)||{tpl:'ys',set:{},chips:{},recent:{},last:{},seq:{}};
 for(const t in TPL){S.set[t]=Object.assign({},DEF_SET,S.set[t]||{});S.chips[t]=S.chips[t]||JSON.parse(JSON.stringify(TPL[t].chips));S.recent[t]=S.recent[t]||{};S.last[t]=S.last[t]||{};S.seq[t]=S.seq[t]||0}
 S.tpl='ys';
@@ -320,7 +329,8 @@ function wrap(x,text,max,maxLines){
 }
 function drawWM(x,W,H,p){
   const t=T(),st=ST(),u=Math.min(W,H)/100*(st.scale/100);
-  const fs=3.2*u,pd=1.3*u,headH=6.2*u,lh=fs*1.38,m=1.3*u,bw=Math.min(t.boxW*u,W-2*m);
+  const fs=3.2*u,pd=1.3*u,lh=fs*1.38,m=1.3*u,bw=Math.min(t.boxW*u,W-2*m);
+  const ls=(6.2*u-1.4*u)*((st.logo||100)/100),headH=Math.max(6.2*u,ls+1.4*u);
   const rows=[];
   for(const f of t.fields){if(f.title)continue;const v=(p.f[f.k]||'').trim();if(v)rows.push([lab(f),v,f.multi?3:2])}
   if(!t.noTime)rows.push([st.timeLabel,fmtT(p.time),1]);
@@ -334,7 +344,7 @@ function drawWM(x,W,H,p){
   x.fillStyle=`rgba(236,236,234,${st.opacity})`;x.fillRect(X,Y+headH,bw,bodyH);
   x.restore();
   // logo
-  const ls=headH-1.4*u,lx=X+0.7*u,ly=Y+0.7*u,lg=logos[S.tpl];
+  const lx=X+0.7*u,ly=Y+(headH-ls)/2,lg=logos[S.tpl];
   x.save();x.beginPath();x.roundRect(lx,ly,ls,ls,0.6*u);x.fillStyle='#fff';x.fill();x.clip();
   if(lg.complete)x.drawImage(lg,lx,ly,ls,ls);x.restore();
   // title
@@ -351,20 +361,45 @@ function drawWM(x,W,H,p){
 
 /* ---------- photos ---------- */
 let uid=0;
+const DBNAME='wmdb_ys';
+const DB=(()=>{let p=null;
+  const open=()=>p||(p=new Promise((res,rej)=>{if(!window.indexedDB)return rej('no idb');const q=indexedDB.open(DBNAME,1);
+    q.onupgradeneeded=()=>{const d=q.result;d.createObjectStore('blobs');d.createObjectStore('meta',{keyPath:'id'})};q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)}));
+  const tx=async(store,mode,fn)=>{const d=await open();return new Promise((res,rej)=>{const t=d.transaction(store,mode);const req=fn(t.objectStore(store));t.oncomplete=()=>res(req&&req.result);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)})};
+  return{
+    putBlob:(id,b)=>tx('blobs','readwrite',s=>s.put(b,id)).catch(()=>{}),
+    getBlob:id=>tx('blobs','readonly',s=>s.get(id)).catch(()=>null),
+    putMeta:m=>tx('meta','readwrite',s=>s.put(m)).catch(()=>{}),
+    allMeta:()=>tx('meta','readonly',s=>s.getAll()).catch(()=>[]),
+    del:id=>Promise.all([tx('blobs','readwrite',s=>s.delete(id)),tx('meta','readwrite',s=>s.delete(id))]).catch(()=>{}),
+    clear:()=>Promise.all([tx('blobs','readwrite',s=>s.clear()),tx('meta','readwrite',s=>s.clear())]).catch(()=>{})
+  }})();
+const ptm={};
+function persist(p,now){if(!p)return;clearTimeout(ptm[p.id]);const go=()=>DB.putMeta({id:p.id,time:+p.time,f:p.f,off:p.off,anno:p.anno||[],done:!!p.done,thumb:typeof p.thumb==='string'&&p.thumb.startsWith('data:')?p.thumb:''});if(now)go();else ptm[p.id]=setTimeout(go,300)}
+function saveCur(){S.cur=cur;save()}
+async function restore(){
+  const ms=(await DB.allMeta()).sort((a,b)=>a.id-b.id);if(!ms.length)return;
+  for(const m of ms){const b=await DB.getBlob(m.id);if(!b)continue;
+    photos.push({id:m.id,file:b,time:new Date(m.time),f:m.f||{},off:m.off??50,anno:m.anno||[],done:!!m.done,thumb:m.thumb||''});uid=Math.max(uid,m.id)}
+  photos.forEach(p=>{if(!p.thumb)makeThumb(p)});
+  cur=Math.min(Math.max(0,S.cur??0),photos.length-1);drawAll();
+  if(photos.length)toast(`已恢復 ${photos.length} 張未完成的照片`);
+}
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
 async function addFiles(list){
   const base=Object.assign({},photos[cur]?photos[cur].f:S.last[S.tpl]);base.defect='';
   for(const file of list){
     const time=(await exifDate(file))||new Date(file.lastModified||Date.now());
     const p={id:++uid,file,time,f:Object.assign({},base),off:50,done:false,thumb:''};
-    photos.push(p);makeThumb(p);
+    photos.push(p);await DB.putBlob(p.id,file);persist(p,true);makeThumb(p);
   }
-  cur=photos.length-list.length;drawAll();
+  cur=photos.length-list.length;saveCur();drawAll();
 }
 async function makeThumb(p){
   try{const b=await createImageBitmap(p.file,{imageOrientation:'from-image',resizeWidth:160,resizeQuality:'low'});
     const c=document.createElement('canvas');c.width=b.width;c.height=b.height;c.getContext('2d').drawImage(b,0,0);b.close&&b.close();p.thumb=c.toDataURL('image/jpeg',.7)}
   catch(e){p.thumb=URL.createObjectURL(p.file)}
-  drawStrip();
+  persist(p);drawStrip();
 }
 $('cam').onchange=e=>{const fs=[...e.target.files];e.target.value='';if(!fs.length)return;addFiles(fs);if(ST().keepOrig)saveOrig(fs)};
 async function saveOrig(fs){
@@ -393,7 +428,7 @@ function drawStrip(){
   const s=$('strip');s.innerHTML='';
   photos.forEach((p,i)=>{const d=document.createElement('div');d.className='th'+(i===cur?' on':'');
     d.innerHTML=(p.thumb?`<img src="${p.thumb}">`:'')+`<span class="x">✕</span>`+(p.done?'<span class="ok">✓</span>':'')+((p.anno&&p.anno.length)?'<span class="ok" style="left:auto;right:2px;bottom:2px;background:#e33">✏</span>':'');
-    d.onclick=e=>{if(e.target.classList.contains('x')){photos.splice(i,1);if(bmpCache.id===p.id)bmpCache={id:null,bmp:null};cur=Math.min(cur,photos.length-1);drawAll();return}cur=i;drawAll()};
+    d.onclick=e=>{if(e.target.classList.contains('x')){photos.splice(i,1);DB.del(p.id);if(bmpCache.id===p.id)bmpCache={id:null,bmp:null};cur=Math.min(cur,photos.length-1);saveCur();drawAll();return}cur=i;saveCur();drawAll()};
     s.appendChild(d)});
   const has=photos.length>0;$('saveOne').disabled=!has;$('saveAll').disabled=!has;
   $('saveAll').textContent=photos.length>1?`全部輸出（${photos.length}）`:'全部輸出';
@@ -426,15 +461,18 @@ function drawForm(){
   }
   if(p&&!T().noTime){const w=document.createElement('div');w.className='f time';w.innerHTML=`<span>${esc(ST().timeLabel)}</span>`;
     const ti=document.createElement('input');ti.type='datetime-local';ti.value=toLocalInput(p.time);
-    ti.onchange=()=>{const d=new Date(ti.value);if(!isNaN(d)){p.time=d;schedule()}};w.appendChild(ti);F.appendChild(w)}
+    ti.onchange=()=>{const d=new Date(ti.value);if(!isNaN(d)){p.time=d;persist(p);schedule()}};w.appendChild(ti);F.appendChild(w)}
 }
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function setVal(k,v,redraw){
-  if(photos[cur])photos[cur].f[k]=v;S.last[S.tpl][k]=v;save();schedule();
+  if(photos[cur]){const old=photos[cur].f[k]||'';photos[cur].f[k]=v;persist(photos[cur]);
+    if(k!=='defect')for(let j=cur+1;j<photos.length;j++){const q=photos[j];if(!q.f[k]||q.f[k]===old){q.f[k]=v;persist(q)}}}
+  S.last[S.tpl][k]=v;save();schedule();
 }
 let tmr;function schedule(){clearTimeout(tmr);tmr=setTimeout(drawPrev,120)}
 async function drawPrev(){
   const box=$('prev'),p=photos[cur];
+  $('look').classList.toggle('show',!!p);
   if(!p){$('annoB').style.display='none';box.innerHTML='<div class="empty">按「拍照」會開啟手機原相機<br>或用「相簿多選」一次匯入現場拍好的照片</div>';$('warn').style.display='none';$('offw').style.display='none';return}
   const c=await render(p,1100);box.innerHTML='';box.appendChild(c);
   const ab=$('annoB');ab.style.display='block';ab.textContent=(p.anno&&p.anno.length)?`✏ 標註缺失（已加 ${p.anno.length} 個，點此修改）`:'✏ 標註缺失（框選・箭頭・文字）';
@@ -442,9 +480,9 @@ async function drawPrev(){
   const w=$('warn');if(photoLand!==tplLand){w.style.display='block';w.textContent=`⚠ 這張是${photoLand?'橫':'直'}拍，${T().short}範本要${tplLand?'橫':'直'}式，已自動裁切，可用下方滑桿調整位置`}else w.style.display='none';
   const a=outSize(100);const need=Math.abs(b.width/b.height-a[0]/a[1])>0.02;$('offw').style.display=need?'flex':'none';$('off').value=p.off;
 }
-$('off').oninput=e=>{if(photos[cur]){photos[cur].off=+e.target.value;schedule()}};
-$('prevB').onclick=()=>{if(cur>0){cur--;drawAll()}};
-$('nextB').onclick=()=>{if(cur<photos.length-1){cur++;drawAll()}};
+$('off').oninput=e=>{if(photos[cur]){photos[cur].off=+e.target.value;persist(photos[cur]);schedule()}};
+$('prevB').onclick=()=>{if(cur>0){cur--;saveCur();drawAll()}};
+$('nextB').onclick=()=>{if(cur<photos.length-1){cur++;saveCur();drawAll()}};
 
 function drawSet(){
   const st=ST(),el=$('set');
@@ -452,7 +490,6 @@ function drawSet(){
   <span>輸出比例</span><select id="sR">${[['','範本預設（'+T().ratioTxt+'）'],['16,9','橫式 16:9'],['4,3','橫式 4:3'],['3,4','直式 4:3'],['9,16','直式 16:9']].map(o=>`<option value="${o[0]}" ${(st.ratio?st.ratio.join(','):'')===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select>
   <span>輸出長邊</span><select id="sL">${[1600,1920,2560,3200,4000].map(v=>`<option ${v==st.longEdge?'selected':''}>${v}</option>`).join('')}</select>
   <span>JPEG 品質 <b id="vQ">${st.quality}</b></span><input type="range" id="sQ" min="0.6" max="0.98" step="0.02" value="${st.quality}">
-  <span>水印大小 <b id="vS">${st.scale}%</b></span><input type="range" id="sS" min="70" max="150" step="5" value="${st.scale}">
   <span>底色不透明 <b id="vO">${st.opacity}</b></span><input type="range" id="sO" min="0.4" max="1" step="0.01" value="${st.opacity}">`;
   for(const f of T().fields)h+=`<span>欄位名稱</span><input data-k="${f.k}" value="${esc(lab(f))}">`;
   if(!T().noTime)h+=`<span>欄位名稱</span><input id="sT" value="${esc(st.timeLabel)}">`;
@@ -462,15 +499,17 @@ function drawSet(){
   $('sR').onchange=e=>{st.ratio=e.target.value?e.target.value.split(',').map(Number):null;save();schedule()};
   $('sL').onchange=e=>{st.longEdge=+e.target.value;save();toast(`輸出 ${outSize(st.longEdge).join('×')}`)};
   $('sQ').oninput=e=>{st.quality=+e.target.value;$('vQ').textContent=st.quality;save()};
-  $('sS').oninput=e=>{st.scale=+e.target.value;$('vS').textContent=st.scale+'%';save();schedule()};
   $('sO').oninput=e=>{st.opacity=+e.target.value;$('vO').textContent=st.opacity;save();schedule()};
   el.querySelectorAll('input[data-k]').forEach(i=>i.onchange=()=>{st.labels[i.dataset.k]=i.value.trim();save();drawForm();schedule()});
   if($('sT'))$('sT').onchange=e=>{st.timeLabel=e.target.value.trim()||'拍攝時間';save();schedule()};
 }
 $('resetChips').onclick=()=>{S.chips[S.tpl]=JSON.parse(JSON.stringify(T().chips));S.recent[S.tpl]={};save();drawForm();toast('已還原')};
-$('clearAll').onclick=()=>{photos=[];cur=-1;bmpCache={id:null,bmp:null};drawAll()};
+$('clearAll').onclick=()=>{DB.clear();photos=[];cur=-1;bmpCache={id:null,bmp:null};drawAll()};
 
-function drawAll(){drawTpls();drawStrip();drawForm();drawSet();drawPrev()}
+function syncLook(){const st=ST();$('qSi').value=st.scale;$('qS').textContent=st.scale+'%';$('qLi').value=st.logo||100;$('qL').textContent=(st.logo||100)+'%'}
+$('qSi').oninput=e=>{ST().scale=+e.target.value;$('qS').textContent=ST().scale+'%';save();schedule()};
+$('qLi').oninput=e=>{ST().logo=+e.target.value;$('qL').textContent=ST().logo+'%';save();schedule()};
+function drawAll(){drawTpls();drawStrip();drawForm();drawSet();syncLook();drawPrev()}
 
 /* ---------- output ---------- */
 const clean=s=>String(s||'').replace(/[\\/:*?"<>|\n\r]+/g,'-').trim().slice(0,24);
@@ -522,7 +561,7 @@ function loadZip(){return window.JSZip?Promise.resolve():new Promise((res,rej)=>
 async function run(list){
   mask(true,'產生中…');
   try{const out=[];for(let i=0;i<list.length;i++){mask(true,`產生中 ${i+1}/${list.length}`);out.push(await makeFile(list[i]))}
-    mask(false);const msg=await deliver(out);list.forEach(p=>p.done=true);if(msg)toast(msg)}
+    mask(false);const msg=await deliver(out);list.forEach(p=>{p.done=true;persist(p,true)});if(msg)toast(msg)}
   catch(e){mask(false);toast(e&&e.code==='declined'?'已取消':'儲存失敗：'+(e&&(e.message||e.code)||e))}
   drawStrip();drawForm();
 }
@@ -611,12 +650,12 @@ $('edU').onclick=()=>{ED.list.pop();ED.sel=-1;edDraw()};
 $('edD').onclick=()=>{if(ED.sel>=0){ED.list.splice(ED.sel,1);ED.sel=-1;edDraw()}};
 $('edC').onclick=()=>{ED.list=[];ED.sel=-1;edDraw()};
 $('edX').onclick=()=>{$('ed').classList.remove('show');$('tbar').classList.remove('show')};
-$('edOK').onclick=()=>{const p=photos[cur];if(p){p.anno=ED.list;p.done=false}$('ed').classList.remove('show');$('tbar').classList.remove('show');drawStrip();drawPrev()};
+$('edOK').onclick=()=>{const p=photos[cur];if(p){p.anno=ED.list;p.done=false;persist(p,true)}$('ed').classList.remove('show');$('tbar').classList.remove('show');drawStrip();drawPrev()};
 
-try{drawAll()}catch(e){__showErr('init: '+e.message+'\n'+(e.stack||''))}
+try{drawAll();restore()}catch(e){__showErr('init: '+e.message+'\n'+(e.stack||''))}
 </script>
 <script>
-if('serviceWorker' in navigator && location.protocol==='https:'){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}
+if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost')){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}
 </script>
 </body>
 </html>
