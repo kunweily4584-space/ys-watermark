@@ -86,6 +86,15 @@ details.card summary{font-weight:700;cursor:pointer}
 #tbar input{flex:1;font-size:17px;padding:9px 10px;border-radius:10px;border:0;font-family:inherit}
 .annoB{margin-top:8px;width:100%;padding:11px}
 .stripe,.step,.tip0{display:none}
+.iosGuide{display:none;margin-top:10px;background:#fff;border:1.5px solid var(--c);border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.6}
+body.ios .iosGuide{display:block}
+.iosGuide summary{font-weight:700;color:var(--c);cursor:pointer}
+.iosGuide ol{margin:6px 0 4px;padding-left:20px}
+.iosGuide small{color:var(--mute)}
+.upd{display:none;background:#1e7d3c;color:#fff;text-align:center;padding:11px 12px;font-size:15px;font-weight:700;cursor:pointer}
+.upd.show{display:block}
+.ver{text-align:center;font-size:12px;color:var(--mute);margin:14px 0 4px}
+#out .hd .big{background:#1fa463!important;font-size:16px;padding:11px 14px}
 .look{display:none;gap:12px;margin-top:8px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 12px}
 .look.show{display:flex}
 .look label{flex:1;font-size:13px;color:var(--mute);display:flex;flex-direction:column;gap:2px}
@@ -160,10 +169,11 @@ details.card summary{color:var(--c);letter-spacing:1px}
 window.__errs=[];
 function __showErr(m){try{window.__errs.push(m);var d=document.getElementById('errbox');if(!d){d=document.createElement('div');d.id='errbox';d.style.cssText='background:#c62828;color:#fff;font-size:13px;padding:10px 12px;margin:10px 12px;border-radius:10px;white-space:pre-wrap;word-break:break-all';(document.body||document.documentElement).insertBefore(d,(document.body||document.documentElement).firstChild)}d.textContent='⚠ 錯誤（請截圖給 Claude）\n'+window.__errs.join('\n')+'\n'+navigator.userAgent}catch(e){}}
 window.addEventListener('error',function(e){__showErr((e.message||'error')+' @'+(e.lineno||'?')+':'+(e.colno||'?'))});
-window.addEventListener('unhandledrejection',function(e){__showErr('promise: '+(e.reason&&(e.reason.message||e.reason.code)||e.reason))});
+window.addEventListener('unhandledrejection',function(e){var x=e.reason;__showErr('promise: '+(x&&x.message?x.message:x&&x.code?x.code:x&&x.type?('Event '+x.type+' '+((x.target&&(x.target.src||x.target.error&&x.target.error.message))||'').toString().slice(0,60)):String(x)))});
 </script>
 </head>
 <body>
+<div class="upd" id="upd"></div>
 <header><div class="tpls" id="tpls"></div><div class="stripe"></div></header>
 <main>
   <div class="step"><b>01</b>拍照・匯入</div>
@@ -171,6 +181,11 @@ window.addEventListener('unhandledrejection',function(e){__showErr('promise: '+(
     <label class="btn pri">📷 拍照<input id="cam" type="file" accept="image/*" capture="environment"></label>
     <label class="btn">🖼 相簿多選<input id="pick" type="file" accept="image/*" multiple></label>
   </div>
+  <details class="iosGuide" id="iosGuide"><summary>📱 iPhone 使用方式（點此展開／收起）</summary>
+    <ol><li>用 iPhone 內建「相機」拍，<b>廣角、長焦</b>都能用</li>
+    <li>回到這裡按「<b>相簿多選</b>」匯入</li>
+    <li>按「全部輸出」後，點綠色的「<b>存到照片</b>」→ 選「<b>儲存 N 張影像</b>」</li></ol>
+    <small>直接按下載的圖會進「檔案」App，不會出現在照片裡。</small></details>
   <div class="tip0">📷 需要<b>長焦、廣角</b>時：請用手機內建相機拍，拍完按「相簿多選」一次匯入（App 的「拍照」只能用主鏡頭）</div>
   <div class="strip" id="strip"></div>
   <div class="prev" id="prev"><div class="empty">按「拍照」會開啟手機原相機<br>或用「相簿多選」一次匯入現場拍好的照片</div></div>
@@ -194,6 +209,7 @@ window.addEventListener('unhandledrejection',function(e){__showErr('promise: '+(
       <button class="btn" id="clearAll" style="flex:1;padding:8px;font-size:14px">清空照片</button>
     </div>
   </details>
+  <div class="ver" id="ver"></div>
 </main>
 <div id="ed">
   <div class="top"><button id="edX">取消</button><b>標註缺失</b><button class="pri" id="edOK">完成</button></div>
@@ -210,13 +226,14 @@ window.addEventListener('unhandledrejection',function(e){__showErr('promise: '+(
   </div>
 </div>
 <div id="out"><div class="hd"><b id="outT">輸出完成</b><button class="pri" id="outShare">📤 分享全部</button><button id="outX">關閉</button></div>
-<div class="tip">如果沒有自動下載：<b>長按圖片 →「下載圖片」/「儲存影像」</b>，或按「分享」存到相簿、傳 LINE。</div>
+<div class="tip" id="outTip"></div>
 <div class="ls" id="outL"></div></div>
 <div class="toast" id="toast"></div>
 <div class="mask" id="mask"><span id="maskT">處理中…</span></div>
 
 <script>
 if(!CanvasRenderingContext2D.prototype.roundRect){CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){r=Math.min(r,w/2,h/2);this.moveTo(x+r,y);this.arcTo(x+w,y,x+w,y+h,r);this.arcTo(x+w,y+h,x,y+h,r);this.arcTo(x,y+h,x,y,r);this.arcTo(x,y,x+w,y,r);this.closePath();return this}}
+const APP_VER='1.4';
 const IOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 const LOGO_A="data:image/jpeg;base64,";
 const LOGO_B="data:image/jpeg;base64,";
@@ -252,6 +269,8 @@ const lab=(f)=>ST().labels[f.k]||f.label;
 const $=id=>document.getElementById(id);
 const logos={};for(const t in TPL){const i=new Image();i.src=TPL[t].logo;logos[t]=i}
 
+if(IOS)document.body.classList.add('ios');
+try{const g=document.getElementById('iosGuide');g.open=store.get('wm_iosguide',true);g.addEventListener('toggle',()=>store.set('wm_iosguide',g.open))}catch(e){}
 /* ---------- downloads capability (inside Claude) ---------- */
 let dlP=Promise.resolve(null);
 try{if(window.claude&&typeof claude.use==='function')dlP=claude.use('downloads').catch(()=>null)}catch(e){}
@@ -283,12 +302,20 @@ const fmtT=d=>`${d.getFullYear()}.${pad2(d.getMonth()+1)}.${pad2(d.getDate())} $
 const toLocalInput=d=>`${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 
 /* ---------- image ---------- */
+function loadImg(src){return new Promise((res,rej)=>{const i=new Image();i.decoding='async';i.onload=()=>res(i);i.onerror=()=>rej(new Error('img'));i.src=src})}
+function readURL(f){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=()=>rej(fr.error);fr.readAsDataURL(f)})}
+async function decode(file){
+  try{return await createImageBitmap(file,{imageOrientation:'from-image'})}catch(e){}
+  try{const u=URL.createObjectURL(file);const i=await loadImg(u);setTimeout(()=>URL.revokeObjectURL(u),60000);return i}catch(e){}
+  try{return await loadImg(await readURL(file))}catch(e){}
+  try{return await createImageBitmap(file)}catch(e){}
+  throw new Error(`無法讀取這張照片（${file.type||'未知格式'}，${((file.size||0)/1048576).toFixed(1)}MB）`);
+}
 async function bitmap(p){
   if(bmpCache.id===p.id)return bmpCache.bmp;
   if(bmpCache.bmp&&bmpCache.bmp.close)bmpCache.bmp.close();
-  let b;
-  try{b=await createImageBitmap(p.file,{imageOrientation:'from-image'})}
-  catch(e){b=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=URL.createObjectURL(p.file)})}
+  bmpCache={id:null,bmp:null};
+  const b=await decode(p.file);
   bmpCache={id:p.id,bmp:b};return b;
 }
 function outSize(L){const [a,b]=ST().ratio||T().ratio;return a>=b?[L,Math.round(L*b/a)]:[Math.round(L*a/b),L]}
@@ -367,7 +394,7 @@ const DB=(()=>{let p=null;
     q.onupgradeneeded=()=>{const d=q.result;d.createObjectStore('blobs');d.createObjectStore('meta',{keyPath:'id'})};q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)}));
   const tx=async(store,mode,fn)=>{const d=await open();return new Promise((res,rej)=>{const t=d.transaction(store,mode);const req=fn(t.objectStore(store));t.oncomplete=()=>res(req&&req.result);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)})};
   return{
-    putBlob:(id,b)=>tx('blobs','readwrite',s=>s.put(b,id)).catch(()=>{}),
+    putBlob:async(id,b)=>{let v;try{v={buf:await b.arrayBuffer(),type:b.type||'image/jpeg'}}catch(e){v=b}return tx('blobs','readwrite',s=>s.put(v,id)).catch(()=>{})},
     getBlob:id=>tx('blobs','readonly',s=>s.get(id)).catch(()=>null),
     putMeta:m=>tx('meta','readwrite',s=>s.put(m)).catch(()=>{}),
     allMeta:()=>tx('meta','readonly',s=>s.getAll()).catch(()=>[]),
@@ -375,33 +402,34 @@ const DB=(()=>{let p=null;
     clear:()=>Promise.all([tx('blobs','readwrite',s=>s.clear()),tx('meta','readwrite',s=>s.clear())]).catch(()=>{})
   }})();
 const ptm={};
-function persist(p,now){if(!p)return;clearTimeout(ptm[p.id]);const go=()=>DB.putMeta({id:p.id,time:+p.time,f:p.f,off:p.off,anno:p.anno||[],done:!!p.done,thumb:typeof p.thumb==='string'&&p.thumb.startsWith('data:')?p.thumb:''});if(now)go();else ptm[p.id]=setTimeout(go,300)}
+function persist(p,now){if(!p)return;clearTimeout(ptm[p.id]);const go=()=>DB.putMeta({id:p.id,time:+p.time,f:p.f,off:p.off,anno:p.anno||[],done:!!p.done,fromCam:!!p.fromCam,thumb:typeof p.thumb==='string'&&p.thumb.startsWith('data:')?p.thumb:''});if(now)go();else ptm[p.id]=setTimeout(go,300)}
 function saveCur(){S.cur=cur;save()}
 async function restore(){
   const ms=(await DB.allMeta()).sort((a,b)=>a.id-b.id);if(!ms.length)return;
-  for(const m of ms){const b=await DB.getBlob(m.id);if(!b)continue;
-    photos.push({id:m.id,file:b,time:new Date(m.time),f:m.f||{},off:m.off??50,anno:m.anno||[],done:!!m.done,thumb:m.thumb||''});uid=Math.max(uid,m.id)}
+  for(const m of ms){const rec=await DB.getBlob(m.id);if(!rec)continue;const b=rec.buf?new Blob([rec.buf],{type:rec.type}):rec;
+    photos.push({id:m.id,file:b,time:new Date(m.time),f:m.f||{},off:m.off??50,anno:m.anno||[],done:!!m.done,fromCam:!!m.fromCam,thumb:m.thumb||''});uid=Math.max(uid,m.id)}
   photos.forEach(p=>{if(!p.thumb)makeThumb(p)});
   cur=Math.min(Math.max(0,S.cur??0),photos.length-1);drawAll();
   if(photos.length)toast(`已恢復 ${photos.length} 張未完成的照片`);
 }
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
-async function addFiles(list){
+async function addFiles(list,opt={}){
   const base=Object.assign({},photos[cur]?photos[cur].f:S.last[S.tpl]);base.defect='';
   for(const file of list){
     const time=(await exifDate(file))||new Date(file.lastModified||Date.now());
-    const p={id:++uid,file,time,f:Object.assign({},base),off:50,done:false,thumb:''};
+    const p={id:++uid,file,time,f:Object.assign({},base),off:50,done:false,thumb:'',fromCam:!!opt.fromCam};
     photos.push(p);await DB.putBlob(p.id,file);persist(p,true);makeThumb(p);
   }
   cur=photos.length-list.length;saveCur();drawAll();
 }
 async function makeThumb(p){
-  try{const b=await createImageBitmap(p.file,{imageOrientation:'from-image',resizeWidth:160,resizeQuality:'low'});
-    const c=document.createElement('canvas');c.width=b.width;c.height=b.height;c.getContext('2d').drawImage(b,0,0);b.close&&b.close();p.thumb=c.toDataURL('image/jpeg',.7)}
-  catch(e){p.thumb=URL.createObjectURL(p.file)}
+  try{const b=await decode(p.file);const sc=160/Math.max(b.width,b.height);
+    const c=document.createElement('canvas');c.width=Math.max(1,Math.round(b.width*sc));c.height=Math.max(1,Math.round(b.height*sc));c.getContext('2d').drawImage(b,0,0,c.width,c.height);
+    if(b.close&&bmpCache.bmp!==b)b.close();p.thumb=c.toDataURL('image/jpeg',.7)}
+  catch(e){p.thumb='';p.bad=e.message}
   persist(p);drawStrip();
 }
-$('cam').onchange=e=>{const fs=[...e.target.files];e.target.value='';if(!fs.length)return;addFiles(fs);if(ST().keepOrig)saveOrig(fs)};
+$('cam').onchange=e=>{const fs=[...e.target.files];e.target.value='';if(!fs.length)return;addFiles(fs,{fromCam:true});if(ST().keepOrig&&!IOS)saveOrig(fs)};
 async function saveOrig(fs){
   for(const f of fs){
     const d=(await exifDate(f))||new Date(f.lastModified||Date.now());
@@ -427,7 +455,7 @@ function drawTpls(){
 function drawStrip(){
   const s=$('strip');s.innerHTML='';
   photos.forEach((p,i)=>{const d=document.createElement('div');d.className='th'+(i===cur?' on':'');
-    d.innerHTML=(p.thumb?`<img src="${p.thumb}">`:'')+`<span class="x">✕</span>`+(p.done?'<span class="ok">✓</span>':'')+((p.anno&&p.anno.length)?'<span class="ok" style="left:auto;right:2px;bottom:2px;background:#e33">✏</span>':'');
+    d.innerHTML=(p.thumb?`<img src="${p.thumb}">`:(p.bad?'<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px">⚠</span>':''))+`<span class="x">✕</span>`+(p.done?'<span class="ok">✓</span>':'')+((p.anno&&p.anno.length)?'<span class="ok" style="left:auto;right:2px;bottom:2px;background:#e33">✏</span>':'');
     d.onclick=e=>{if(e.target.classList.contains('x')){photos.splice(i,1);DB.del(p.id);if(bmpCache.id===p.id)bmpCache={id:null,bmp:null};cur=Math.min(cur,photos.length-1);saveCur();drawAll();return}cur=i;saveCur();drawAll()};
     s.appendChild(d)});
   const has=photos.length>0;$('saveOne').disabled=!has;$('saveAll').disabled=!has;
@@ -474,7 +502,8 @@ async function drawPrev(){
   const box=$('prev'),p=photos[cur];
   $('look').classList.toggle('show',!!p);
   if(!p){$('annoB').style.display='none';box.innerHTML='<div class="empty">按「拍照」會開啟手機原相機<br>或用「相簿多選」一次匯入現場拍好的照片</div>';$('warn').style.display='none';$('offw').style.display='none';return}
-  const c=await render(p,1100);box.innerHTML='';box.appendChild(c);
+  let c;try{c=await render(p,1100)}catch(e){box.innerHTML=`<div class="empty">⚠ ${esc(e.message||e)}<br>可以按縮圖上的 ✕ 移除，改用「相簿多選」重新匯入</div>`;$('annoB').style.display='none';return}
+  box.innerHTML='';box.appendChild(c);
   const ab=$('annoB');ab.style.display='block';ab.textContent=(p.anno&&p.anno.length)?`✏ 標註缺失（已加 ${p.anno.length} 個，點此修改）`:'✏ 標註缺失（框選・箭頭・文字）';
   const b=bmpCache.bmp,R=ST().ratio||T().ratio,photoLand=b.width>=b.height,tplLand=R[0]>=R[1];
   const w=$('warn');if(photoLand!==tplLand){w.style.display='block';w.textContent=`⚠ 這張是${photoLand?'橫':'直'}拍，${T().short}範本要${tplLand?'橫':'直'}式，已自動裁切，可用下方滑桿調整位置`}else w.style.display='none';
@@ -486,7 +515,7 @@ $('nextB').onclick=()=>{if(cur<photos.length-1){cur++;saveCur();drawAll()}};
 
 function drawSet(){
   const st=ST(),el=$('set');
-  let h=`<span>同時儲存原圖<br><small style="color:var(--mute)">用「拍照」時才需要</small></span><label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="sK" ${st.keepOrig?'checked':''} style="width:22px;height:22px">${st.keepOrig?'開':'關'}</label>
+  let h=`<span>${IOS?'輸出時附上原圖':'同時儲存原圖'}<br><small style="color:var(--mute)">${IOS?'用 App「拍照」的照片才有':'用「拍照」時才需要'}</small></span><label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="sK" ${st.keepOrig?'checked':''} style="width:22px;height:22px">${st.keepOrig?'開':'關'}</label>
   <span>輸出比例</span><select id="sR">${[['','範本預設（'+T().ratioTxt+'）'],['16,9','橫式 16:9'],['4,3','橫式 4:3'],['3,4','直式 4:3'],['9,16','直式 16:9']].map(o=>`<option value="${o[0]}" ${(st.ratio?st.ratio.join(','):'')===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select>
   <span>輸出長邊</span><select id="sL">${[1600,1920,2560,3200,4000].map(v=>`<option ${v==st.longEdge?'selected':''}>${v}</option>`).join('')}</select>
   <span>JPEG 品質 <b id="vQ">${st.quality}</b></span><input type="range" id="sQ" min="0.6" max="0.98" step="0.02" value="${st.quality}">
@@ -533,6 +562,7 @@ async function deliver(files){
     const zb=await z.generateAsync({type:'blob',compression:'STORE'});
     const t=new Date();await dl.save({filename:`${T().short}_水印_${t.getMonth()+1}${pad2(t.getDate())}_${files.length}張.zip`,data:zb});return '已儲存 ZIP';
   }catch(e){if(e&&e.code==='declined')throw e;await showOut(files);return null}}
+  if(IOS){await showOut(files);return null}
   for(const f of files){try{const a=document.createElement('a');a.href=URL.createObjectURL(f.blob);a.download=f.name;document.body.appendChild(a);a.click();a.remove()}catch(e){}await new Promise(r=>setTimeout(r,300))}
   await showOut(files);
   return null;
@@ -542,13 +572,18 @@ let OUT=[];
 async function showOut(files){
   OUT=files;const L=$('outL');L.innerHTML='';$('outT').textContent=`輸出完成（${files.length} 張）`;
   const canShare=f=>{try{return !!(navigator.canShare&&navigator.canShare({files:f}))}catch(e){return false}};
-  const fileOf=f=>new File([f.blob],f.name,{type:'image/jpeg'});
-  $('outShare').style.display=canShare(files.map(fileOf))?'':'none';
+  const fileOf=f=>new File([f.blob],f.name,{type:f.blob.type||'image/jpeg'});
+  const all=canShare(files.map(fileOf));
+  $('outShare').style.display=all?'':'none';
+  $('outShare').classList.toggle('big',IOS);
+  $('outShare').textContent=IOS?`📲 存到照片（${files.length} 張）`:'📤 分享全部';
+  $('outTip').innerHTML=IOS?(all?'按上方綠色「<b>存到照片</b>」→ 在選單選「<b>儲存 '+files.length+' 張影像</b>」，就會存進照片 App。':'請<b>長按每張圖片 →「加入照片」</b>存進照片 App。')
+    :'如果沒有自動下載：<b>長按圖片 →「下載圖片」/「儲存影像」</b>，或按「分享」存到相簿、傳 LINE。';
   for(const f of files){
     const d=document.createElement('div');d.className='it';const img=new Image();img.src=await toDataURL(f.blob);img.alt=f.name;
-    const nm=document.createElement('div');nm.className='nm';nm.textContent=f.name;
+    const nm=document.createElement('div');nm.className='nm';nm.textContent=(f.orig?'【原圖】':'')+f.name;
     const bt=document.createElement('div');bt.className='bt';
-    const b1=document.createElement('button');b1.textContent='⬇ 下載';b1.onclick=()=>{const a=document.createElement('a');a.href=img.src;a.download=f.name;document.body.appendChild(a);a.click();a.remove()};
+    const b1=document.createElement('button');b1.textContent=IOS?'存到「檔案」':'⬇ 下載';b1.onclick=()=>{const a=document.createElement('a');a.href=img.src;a.download=f.name;document.body.appendChild(a);a.click();a.remove()};
     bt.appendChild(b1);
     if(canShare([fileOf(f)])){const b2=document.createElement('button');b2.textContent='📤 分享';b2.onclick=()=>navigator.share({files:[fileOf(f)]}).catch(()=>{});bt.appendChild(b2)}
     d.append(img,nm,bt);L.appendChild(d);
@@ -556,11 +591,12 @@ async function showOut(files){
   $('out').classList.add('show');
 }
 $('outX').onclick=()=>{$('out').classList.remove('show');$('outL').innerHTML='';OUT=[]};
-$('outShare').onclick=()=>{const fl=OUT.map(f=>new File([f.blob],f.name,{type:'image/jpeg'}));navigator.share({files:fl}).catch(()=>{})};
+$('outShare').onclick=()=>{const fl=OUT.map(f=>new File([f.blob],f.name,{type:f.blob.type||'image/jpeg'}));navigator.share({files:fl}).then(()=>toast('完成')).catch(e=>{if(e&&e.name!=='AbortError')toast('分享失敗，請改用長按圖片儲存')})};
 function loadZip(){return window.JSZip?Promise.resolve():new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s)})}
 async function run(list){
   mask(true,'產生中…');
   try{const out=[];for(let i=0;i<list.length;i++){mask(true,`產生中 ${i+1}/${list.length}`);out.push(await makeFile(list[i]))}
+    if(IOS&&ST().keepOrig)list.forEach(p=>{if(p.fromCam){const d=p.time;out.push({name:`原圖_${T().short}_${d.getFullYear()}${pad2(d.getMonth()+1)}${pad2(d.getDate())}_${pad2(d.getHours())}${pad2(d.getMinutes())}${pad2(d.getSeconds())}.jpg`,blob:p.file,orig:true})}});
     mask(false);const msg=await deliver(out);list.forEach(p=>{p.done=true;persist(p,true)});if(msg)toast(msg)}
   catch(e){mask(false);toast(e&&e.code==='declined'?'已取消':'儲存失敗：'+(e&&(e.message||e.code)||e))}
   drawStrip();drawForm();
@@ -652,7 +688,13 @@ $('edC').onclick=()=>{ED.list=[];ED.sel=-1;edDraw()};
 $('edX').onclick=()=>{$('ed').classList.remove('show');$('tbar').classList.remove('show')};
 $('edOK').onclick=()=>{const p=photos[cur];if(p){p.anno=ED.list;p.done=false;persist(p,true)}$('ed').classList.remove('show');$('tbar').classList.remove('show');drawStrip();drawPrev()};
 
-try{drawAll();restore()}catch(e){__showErr('init: '+e.message+'\n'+(e.stack||''))}
+function verInit(){
+  $('ver').textContent=`${document.title}  v${APP_VER}`;
+  if(location.protocol!=='https:'||!/github\.io$/.test(location.hostname))return;
+  fetch('./index.html',{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{const m=t.match(/const APP_VER='([^']+)'/);if(m&&m[1]!==APP_VER){const u=$('upd');u.textContent=`🔄 有新版本 v${m[1]}，點這裡更新`;u.classList.add('show');
+    u.onclick=async()=>{u.textContent='更新中…';try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}catch(e){}location.reload()}}}).catch(()=>{});
+}
+try{drawAll();restore();verInit()}catch(e){__showErr('init: '+e.message+'\n'+(e.stack||''))}
 </script>
 <script>
 if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost')){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}
