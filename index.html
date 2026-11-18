@@ -257,7 +257,7 @@ window.addEventListener('unhandledrejection',function(e){var x=e.reason;__showEr
 
 <script>
 if(!CanvasRenderingContext2D.prototype.roundRect){CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){r=Math.min(r,w/2,h/2);this.moveTo(x+r,y);this.arcTo(x+w,y,x+w,y+h,r);this.arcTo(x+w,y+h,x,y+h,r);this.arcTo(x,y+h,x,y,r);this.arcTo(x,y,x+w,y,r);this.closePath();return this}}
-const APP_VER='1.7';
+const APP_VER='1.8';
 const IOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 const LOGO_A="data:image/jpeg;base64,";
 const LOGO_B="data:image/jpeg;base64,";
@@ -545,7 +545,7 @@ function drawForm(){
     const clr=document.createElement('button');clr.className='clr';clr.textContent='✕';clr.title='清除';clr.style.display=val?'':'none';
     const ac=document.createElement('div');ac.className='ac';
     const drawAC=()=>{const q=inp.value.trim().toLowerCase();const H=histOf(f.k).filter(h=>h&&h.toLowerCase()!==q&&(!q||h.toLowerCase().includes(q))).slice(0,5);
-      ac.innerHTML='';if(!H.length||document.activeElement!==inp){ac.classList.remove('show');return}
+      ac.innerHTML='';if(!q||!H.length||document.activeElement!==inp){ac.classList.remove('show');return}
       H.forEach(h=>{const row=document.createElement('div');row.className='acr';
         const qi=q?h.toLowerCase().indexOf(q):-1;row.innerHTML=`<span class="act">🕘 ${qi>=0?esc(h.slice(0,qi))+'<b>'+esc(h.slice(qi,qi+q.length))+'</b>'+esc(h.slice(qi+q.length)):esc(h)}</span><button class="acx" title="刪除這筆紀錄">✕</button>`;
         row.onpointerdown=e=>e.preventDefault();
@@ -553,7 +553,7 @@ function drawForm(){
         row.querySelector('.acx').onclick=()=>{const a=histOf(f.k),i=a.indexOf(h);if(i>=0)a.splice(i,1);save();drawAC()};
         ac.appendChild(row)});ac.classList.add('show')};
     inp.oninput=()=>{setVal(f.k,inp.value,null);clr.style.display=inp.value?'':'none';markSel();drawAC();tok.innerHTML=''};
-    inp.onfocus=()=>{clearTimeout(acHide);drawAC()};
+    inp.onfocus=()=>{clearTimeout(acHide)};
     inp.onblur=()=>{acHide=setTimeout(()=>ac.classList.remove('show'),150)};
     clr.onpointerdown=e=>e.preventDefault();
     clr.onclick=()=>{inp.value='';setVal(f.k,'',null);drawForm()};
