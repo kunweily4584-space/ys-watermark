@@ -52,6 +52,15 @@ input[type=file]{display:none}
 .chip{border:1px solid var(--line);background:#f7f7f5;border-radius:999px;padding:6px 11px;font-size:14px;color:var(--ink);font-family:inherit}
 .chip.rec{border-color:color-mix(in srgb,var(--c) 45%,#fff);background:color-mix(in srgb,var(--c) 8%,#fff)}
 .chip .d{color:#c33;margin-left:4px;font-weight:700}
+.lockbar{display:flex;align-items:center;gap:10px;background:#fff7e6;border:1.5px solid #f2b04a;border-radius:12px;padding:10px 12px;margin-bottom:14px;font-size:14px;line-height:1.5;color:#6b4a00}
+.lockbar span{flex:1}
+.lockbar button{flex:0 0 auto;border:0;background:#f29600;color:#fff;font-weight:700;border-radius:10px;padding:9px 12px;font-size:14px;font-family:inherit}
+.lockbar.draft{background:#eef6ff;border-color:#9cc3ea;color:#1f4f7a}
+.prev{position:relative}
+.prev.locked::after{content:"🔒 已儲存";position:absolute;top:10px;right:10px;background:rgba(0,0,0,.65);color:#fff;font-size:13px;padding:4px 10px;border-radius:999px}
+.pin{border:1px solid var(--line)!important;border-radius:999px;padding:2px 9px!important;margin-right:4px}
+.pin.on{background:#f29600!important;color:#fff!important;border-color:#f29600!important}
+#out .it .bt .edit{background:#f29600}
 .iw{position:relative}
 .iw input,.iw textarea{padding-right:40px}
 .clr{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:30px;height:30px;border:0;border-radius:50%;background:rgba(0,0,0,.08);color:#666;font-size:13px;line-height:30px;padding:0}
@@ -72,6 +81,8 @@ input[type=file]{display:none}
 .gs{flex:1;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:1px 0}
 .gs::-webkit-scrollbar{display:none}
 .gs .chip{flex:0 0 auto;white-space:nowrap}
+.chip .sp{color:#f29600;margin-right:3px;font-size:12px}
+.chip.sel .sp{color:#fff}
 .addc{color:var(--mute);border-style:dashed!important}
 .addbox{display:flex;gap:4px;flex:0 0 auto}
 .addbox input{width:7em;font-size:14px;padding:5px 8px;border:1px solid var(--c);border-radius:999px;font-family:inherit}
@@ -109,7 +120,8 @@ details.card summary{font-weight:700;cursor:pointer}
 #tbar.show{display:flex}
 #tbar input{flex:1;font-size:17px;padding:9px 10px;border-radius:10px;border:0;font-family:inherit}
 .annoB{margin-top:8px;width:100%;padding:11px}
-.stripe,.step,.tip0{display:none}
+.stripe,.step{display:none}
+.tip0{display:block;font-size:12.5px;color:var(--mute);background:#fff;border:1px dashed var(--line);border-radius:10px;padding:7px 10px;margin-top:8px;line-height:1.5}
 .iosGuide{display:none;margin-top:10px;background:#fff;border:1.5px solid var(--c);border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.6}
 body.ios .iosGuide{display:block}
 .iosGuide summary{font-weight:700;color:var(--c);cursor:pointer}
@@ -117,6 +129,7 @@ body.ios .iosGuide{display:block}
 .iosGuide small{color:var(--mute)}
 .upd{display:none;background:#1e7d3c;color:#fff;text-align:center;padding:11px 12px;font-size:15px;font-weight:700;cursor:pointer}
 .upd.show{display:block}
+.credit{text-align:center;font-size:11px;color:var(--mute);opacity:.75;margin:0 0 8px;letter-spacing:.5px}
 .ver{text-align:center;font-size:12px;color:var(--mute);margin:14px 0 4px}
 #out .hd .big{background:#1fa463!important;font-size:16px;padding:11px 14px}
 .look{display:none;gap:12px;margin-top:8px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 12px}
@@ -210,7 +223,7 @@ window.addEventListener('unhandledrejection',function(e){var x=e.reason;__showEr
     <li>回到這裡按「<b>相簿多選</b>」匯入</li>
     <li>按「全部輸出」後，點綠色的「<b>存到照片</b>」→ 選「<b>儲存 N 張影像</b>」</li></ol>
     <small>直接按下載的圖會進「檔案」App，不會出現在照片裡。</small></details>
-  <div class="tip0">📷 需要<b>長焦、廣角</b>時：請用手機內建相機拍，拍完按「相簿多選」一次匯入（App 的「拍照」只能用主鏡頭）</div>
+  <div class="tip0">📷 如遇到 App「拍照」<b>無法切換廣角／長焦</b>：請改用手機內建相機拍，拍完按「相簿多選」一次匯入</div>
   <div class="strip" id="strip"></div>
   <div class="prev" id="prev"><div class="empty">按「拍照」會開啟手機原相機<br>或用「相簿多選」一次匯入現場拍好的照片</div></div>
   <div class="warn" id="warn"></div>
@@ -234,6 +247,7 @@ window.addEventListener('unhandledrejection',function(e){var x=e.reason;__showEr
     </div>
   </details>
   <div class="ver" id="ver"></div>
+  <div class="credit">annjohn 與他的ai小夥伴協力製作</div>
 </main>
 <div id="ed">
   <div class="top"><button id="edX">取消</button><b>標註缺失</b><button class="pri" id="edOK">完成</button></div>
@@ -257,7 +271,7 @@ window.addEventListener('unhandledrejection',function(e){var x=e.reason;__showEr
 
 <script>
 if(!CanvasRenderingContext2D.prototype.roundRect){CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){r=Math.min(r,w/2,h/2);this.moveTo(x+r,y);this.arcTo(x+w,y,x+w,y+h,r);this.arcTo(x+w,y+h,x,y+h,r);this.arcTo(x,y+h,x,y,r);this.arcTo(x,y,x+w,y,r);this.closePath();return this}}
-const APP_VER='1.8';
+const APP_VER='2.1';
 const IOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 const LOGO_A="data:image/jpeg;base64,";
 const LOGO_B="data:image/jpeg;base64,";
@@ -458,8 +472,10 @@ async function restore(){
 }
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
 async function addFiles(list,opt={}){
-  const base=Object.assign({},photos[cur]?photos[cur].f:S.last[S.tpl]);base.defect='';
-  const bcomp=clone(photos[cur]?(photos[cur].comp||{}):S.lastc[S.tpl])||{};delete bcomp.defect;
+  const P=editP(),useDraft=!P;
+  const base=Object.assign({},useDraft?S.last[S.tpl]:P.f);
+  const bcomp=clone(useDraft?S.lastc[S.tpl]:(P.comp||{}))||{};
+  if(!useDraft&&!pinned()){base.defect='';delete bcomp.defect}
   for(const file of list){
     const time=(await exifDate(file))||new Date(file.lastModified||Date.now());
     const p={id:++uid,file,time,f:Object.assign({},base),off:50,done:false,thumb:'',fromCam:!!opt.fromCam,comp:clone(bcomp)};
@@ -500,7 +516,7 @@ function drawTpls(){
 function drawStrip(){
   const s=$('strip');s.innerHTML='';
   photos.forEach((p,i)=>{const d=document.createElement('div');d.className='th'+(i===cur?' on':'');
-    d.innerHTML=(p.thumb?`<img src="${p.thumb}">`:(p.bad?'<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px">⚠</span>':''))+`<span class="x">✕</span>`+(p.done?'<span class="ok">✓</span>':'')+((p.anno&&p.anno.length)?'<span class="ok" style="left:auto;right:2px;bottom:2px;background:#e33">✏</span>':'');
+    d.innerHTML=(p.thumb?`<img src="${p.thumb}">`:(p.bad?'<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px">⚠</span>':''))+`<span class="x">✕</span>`+(p.done?'<span class="ok">🔒</span>':'')+((p.anno&&p.anno.length)?'<span class="ok" style="left:auto;right:2px;bottom:2px;background:#e33">✏</span>':'');
     d.onclick=e=>{if(e.target.classList.contains('x')){photos.splice(i,1);DB.del(p.id);if(bmpCache.id===p.id)bmpCache={id:null,bmp:null};cur=Math.min(cur,photos.length-1);saveCur();drawAll();return}cur=i;saveCur();drawAll()};
     s.appendChild(d)});
   const has=photos.length>0;$('saveOne').disabled=!has;$('saveAll').disabled=!has;
@@ -518,8 +534,11 @@ function compTokens(k,c){const cfg=FCFG(k),t=[];if(!cfg||!c)return t;if(c.raw)t.
   else if(cfg.mode==='multi')(c.list||[]).forEach((v,i)=>t.push({lab:v,rm:()=>c.list.splice(i,1)}));
   else (c.items||[]).forEach((x,i)=>t.push({lab:[x.p,x.s].filter(Boolean).join('｜'),rm:()=>c.items.splice(i,1)}));
   return t;}
-function getComp(k){const p=photos[cur];return clone(p?(p.comp||{})[k]:S.lastc[S.tpl][k])}
-function curText(k){const p=photos[cur];return p?(p.f[k]||''):(S.last[S.tpl][k]||'')}
+const editP=()=>{const p=photos[cur];return p&&!p.done?p:null};
+const pinned=()=>!!(S.pin&&S.pin[S.tpl]);
+function getComp(k){const p=editP();return clone(p?(p.comp||{})[k]:S.lastc[S.tpl][k])}
+function curText(k){const p=editP();return p?(p.f[k]||''):(S.last[S.tpl][k]||'')}
+function unlock(p){if(!p)return;p.done=false;p.cache=null;persist(p,true);drawAll()}
 function applyChip(k,gk,v){const cfg=FCFG(k);let c=getComp(k);if(!c){c={};const t=curText(k).trim();if(t)c.raw=t}
   if(cfg.mode==='seq'){c.sel=c.sel||{};if(c.sel[gk]===v)delete c.sel[gk];else c.sel[gk]=v}
   else if(cfg.mode==='multi'){c.list=c.list||[];const i=c.list.indexOf(v);if(i>=0)c.list.splice(i,1);else c.list.push(v)}
@@ -530,16 +549,27 @@ function applyChip(k,gk,v){const cfg=FCFG(k);let c=getComp(k);if(!c){c={};const 
 function chipOn(k,gk,v){const c=getComp(k),cfg=FCFG(k);if(!c)return false;
   if(cfg.mode==='seq')return (c.sel||{})[gk]===v;if(cfg.mode==='multi')return (c.list||[]).includes(v);
   const L=(c.items||[])[c.items.length-1];return !!L&&(gk==='pos'?L.p===v:L.s===v);}
+S.use=S.use||{};S.star=S.star||{};
+const U=(fk,gk)=>{const a=S.use[S.tpl]=S.use[S.tpl]||{},b=a[fk]=a[fk]||{};return b[gk]=b[gk]||{}};
+const STR=(fk,gk)=>{const a=S.star[S.tpl]=S.star[S.tpl]||{},b=a[fk]=a[fk]||{};return b[gk]=b[gk]||[]};
+let ORD={};
+function ordered(fk,gk,arr){const key=S.tpl+'|'+fk+'|'+gk;let o=ORD[key];
+  if(!o){const st=STR(fk,gk),u=U(fk,gk);o=arr.slice().sort((a,b)=>{const sa=st.indexOf(a),sb=st.indexOf(b);if(sa>=0||sb>=0){if(sa<0)return 1;if(sb<0)return -1;return sa-sb}return (u[b]||0)-(u[a]||0)||arr.indexOf(a)-arr.indexOf(b)});ORD[key]=o}
+  return o.filter(v=>arr.includes(v)).concat(arr.filter(v=>!o.includes(v)));}
+function bump(fk,gk,v){const u=U(fk,gk);u[v]=(u[v]||0)+1;save()}
+function toggleStar(fk,gk,v){const st=STR(fk,gk),i=st.indexOf(v);if(i>=0)st.splice(i,1);else st.push(v);ORD={};save()}
 function histOf(k){return S.hist[S.tpl][k]=S.hist[S.tpl][k]||[]}
 let acHide;
 function drawForm(){
   const F=$('form');const sl={};F.querySelectorAll('.gs').forEach(e=>sl[e.dataset.id]=e.scrollLeft);
   F.innerHTML='';const p=photos[cur];
+  if(p&&p.done){const lb=document.createElement('div');lb.className='lockbar';lb.innerHTML='<span>🔒 目前這張已儲存並鎖住。<br>下面填的是「<b>下一張</b>」的內容。</span><button>修改這張</button>';lb.querySelector('button').onclick=()=>unlock(p);F.appendChild(lb)}
+  else if(!p){const lb=document.createElement('div');lb.className='lockbar draft';lb.innerHTML='<span>📝 先填好這裡，拍進來的照片會直接套用</span>';F.appendChild(lb)}
   for(const f of T().fields){
     const cfg=FCFG(f.k);
     const w=document.createElement('div');w.className='f';
     const val=curText(f.k);
-    w.innerHTML=`<div class="lab"><span>${f.title?'標題　'+T().titlePrefix:''}${lab(f)}</span><span>${cfg?'':'<button data-a="add">＋存成選項</button>'}<button data-a="mg">${manage[f.k]?'完成':'管理'}</button></span></div>`;
+    w.innerHTML=`<div class="lab"><span>${f.title?'標題　'+T().titlePrefix:''}${lab(f)}</span><span>${f.k==='defect'?`<button data-a="pin" class="pin${pinned()?' on':''}">📌 ${pinned()?'已固定':'固定'}</button>`:''}${cfg?'':'<button data-a="add">＋存成選項</button>'}<button data-a="mg">${manage[f.k]?'完成':'管理'}</button></span></div>`;
     const iw=document.createElement('div');iw.className='iw';
     const inp=document.createElement(f.multi?'textarea':'input');if(f.multi)inp.rows=2;inp.placeholder=f.ph||'';inp.value=val;inp.autocomplete='off';
     const clr=document.createElement('button');clr.className='clr';clr.textContent='✕';clr.title='清除';clr.style.display=val?'':'none';
@@ -568,8 +598,10 @@ function drawForm(){
       cfg.groups.forEach(g=>{const row=document.createElement('div');row.className='grp';
         row.innerHTML=`<span class="gl">${esc(g.label)}</span>`;const gs=document.createElement('div');gs.className='gs';gs.dataset.id=f.k+'.'+g.k;
         const arr=S.g[S.tpl][f.k][g.k]=S.g[S.tpl][f.k][g.k]||[];
-        arr.forEach(v=>{const b=document.createElement('button');b.className='chip'+(chipOn(f.k,g.k,v)?' sel':'');b.innerHTML=esc(v)+(manage[f.k]?'<span class="d">×</span>':'');
-          b.onclick=()=>{if(manage[f.k]){arr.splice(arr.indexOf(v),1);save();drawForm();return}applyChip(f.k,g.k,v)};gs.appendChild(b)});
+        const stars=STR(f.k,g.k);
+        ordered(f.k,g.k,arr).forEach(v=>{const b=document.createElement('button');const on=stars.includes(v);b.className='chip'+(chipOn(f.k,g.k,v)?' sel':'')+(on?' star':'');
+          b.innerHTML=(manage[f.k]?`<span class="sp">${on?'★':'☆'}</span>`:(on?'<span class="sp">★</span>':''))+esc(v)+(manage[f.k]?'<span class="d">×</span>':'');
+          b.onclick=e=>{if(manage[f.k]){if(e.target.classList.contains('d')){arr.splice(arr.indexOf(v),1);ORD={};save()}else toggleStar(f.k,g.k,v);drawForm();return}bump(f.k,g.k,v);applyChip(f.k,g.k,v)};gs.appendChild(b)});
         const add=document.createElement('button');add.className='chip addc';add.textContent='＋';
         add.onclick=()=>{const box=document.createElement('span');box.className='addbox';box.innerHTML='<input placeholder="新增選項"><button>✓</button>';add.replaceWith(box);const ip=box.querySelector('input');ip.focus();
           const ok=()=>{const v=ip.value.trim();if(v&&!arr.includes(v)){arr.push(v);save();toast('已加入「'+g.label+'」')}drawForm()};box.querySelector('button').onclick=ok;ip.onkeydown=e=>{if(e.key==='Enter')ok()};ip.onblur=()=>setTimeout(()=>{if(document.body.contains(box)&&!ip.value.trim())drawForm()},200)};
@@ -577,13 +609,16 @@ function drawForm(){
     }else{
       const cs=document.createElement('div');cs.className='chips';
       const pre=S.chips[S.tpl][f.k]||[];
-      pre.forEach(v=>{const c=document.createElement('button');c.className='chip'+(v===inp.value?' sel':'');c.dataset.v=v;c.innerHTML=esc(v)+(manage[f.k]?'<span class="d">×</span>':'');
-        c.onclick=()=>{if(manage[f.k]){S.chips[S.tpl][f.k]=pre.filter(x=>x!==v);save();drawForm();return}inp.value=v;setVal(f.k,v,null);markSel();clr.style.display=''};cs.appendChild(c)});
+      const stars=STR(f.k,'_');
+      ordered(f.k,'_',pre).forEach(v=>{const c=document.createElement('button');const on=stars.includes(v);c.className='chip'+(v===inp.value?' sel':'')+(on?' star':'');c.dataset.v=v;
+        c.innerHTML=(manage[f.k]?`<span class="sp">${on?'★':'☆'}</span>`:(on?'<span class="sp">★</span>':''))+esc(v)+(manage[f.k]?'<span class="d">×</span>':'');
+        c.onclick=e=>{if(manage[f.k]){if(e.target.classList.contains('d')){S.chips[S.tpl][f.k]=pre.filter(x=>x!==v);ORD={};save()}else toggleStar(f.k,'_',v);drawForm();return}bump(f.k,'_',v);inp.value=v;setVal(f.k,v,null);markSel();clr.style.display=''};cs.appendChild(c)});
       markSel=()=>cs.querySelectorAll('.chip').forEach(c=>c.classList.toggle('sel',c.dataset.v===inp.value));
       if(pre.length)w.appendChild(cs);
       w.querySelector('[data-a=add]').onclick=()=>{const v=inp.value.trim();if(!v)return toast('先輸入內容');const a=S.chips[S.tpl][f.k]=S.chips[S.tpl][f.k]||[];if(!a.includes(v))a.unshift(v);save();drawForm();toast('已加入快速選項')};
     }
-    w.querySelector('[data-a=mg]').onclick=()=>{manage[f.k]=!manage[f.k];drawForm()};
+    w.querySelector('[data-a=mg]').onclick=()=>{manage[f.k]=!manage[f.k];ORD={};drawForm();if(manage[f.k])toast('點選項＝★置頂（再點取消），點 ×＝刪除')};
+    const pb=w.querySelector('[data-a=pin]');if(pb)pb.onclick=()=>{S.pin=S.pin||{};S.pin[S.tpl]=!pinned();save();drawForm();toast(pinned()?'缺失已固定：之後每張都會帶入':'已取消固定：每張重新填')};
     F.appendChild(w);
   }
   F.querySelectorAll('.gs').forEach(e=>{if(sl[e.dataset.id])e.scrollLeft=sl[e.dataset.id]});
@@ -594,18 +629,20 @@ function drawForm(){
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function setVal(k,v,comp){
   comp=comp||null;
-  if(photos[cur]){const P=photos[cur],old=P.f[k]||'';P.f[k]=v;P.comp=P.comp||{};P.comp[k]=clone(comp);persist(P);
-    if(k!=='defect')for(let j=cur+1;j<photos.length;j++){const q=photos[j];if(!q.f[k]||q.f[k]===old){q.f[k]=v;q.comp=q.comp||{};q.comp[k]=clone(comp);persist(q)}}}
-  S.last[S.tpl][k]=v;S.lastc[S.tpl][k]=clone(comp);save();schedule();
+  const P=editP();
+  if(P){const old=P.f[k]||'';P.f[k]=v;P.comp=P.comp||{};P.comp[k]=clone(comp);persist(P);
+    if(k!=='defect')for(let j=cur+1;j<photos.length;j++){const q=photos[j];if(q.done)continue;if(!q.f[k]||q.f[k]===old){q.f[k]=v;q.comp=q.comp||{};q.comp[k]=clone(comp);persist(q)}}}
+  S.last[S.tpl][k]=v;S.lastc[S.tpl][k]=clone(comp);save();if(P)schedule();
 }
 let tmr;function schedule(){clearTimeout(tmr);tmr=setTimeout(drawPrev,120)}
 async function drawPrev(){
   const box=$('prev'),p=photos[cur];
   $('look').classList.toggle('show',!!p);
+  $('prev').classList.remove('locked');
   if(!p){$('annoB').style.display='none';box.innerHTML='<div class="empty">按「拍照」會開啟手機原相機<br>或用「相簿多選」一次匯入現場拍好的照片</div>';$('warn').style.display='none';$('offw').style.display='none';return}
   let c;try{c=await render(p,1100)}catch(e){box.innerHTML=`<div class="empty">⚠ ${esc(e.message||e)}<br>可以按縮圖上的 ✕ 移除，改用「相簿多選」重新匯入</div>`;$('annoB').style.display='none';return}
-  box.innerHTML='';box.appendChild(c);
-  const ab=$('annoB');ab.style.display='block';ab.textContent=(p.anno&&p.anno.length)?`✏ 標註缺失（已加 ${p.anno.length} 個，點此修改）`:'✏ 標註缺失（框選・箭頭・文字）';
+  box.innerHTML='';box.appendChild(c);box.classList.toggle('locked',!!p.done);prerender();
+  const ab=$('annoB');ab.style.display=p.done?'none':'block';ab.textContent=(p.anno&&p.anno.length)?`✏ 標註缺失（已加 ${p.anno.length} 個，點此修改）`:'✏ 標註缺失（框選・箭頭・文字）';
   const b=bmpCache.bmp,R=ST().ratio||T().ratio,photoLand=b.width>=b.height,tplLand=R[0]>=R[1];
   const w=$('warn');if(photoLand!==tplLand){w.style.display='block';w.textContent=`⚠ 這張是${photoLand?'橫':'直'}拍，${T().short}範本要${tplLand?'橫':'直'}式，已自動裁切，可用下方滑桿調整位置`}else w.style.display='none';
   const a=outSize(100);const need=Math.abs(b.width/b.height-a[0]/a[1])>0.02;$('offw').style.display=need?'flex':'none';$('off').value=p.off;
@@ -647,13 +684,18 @@ function remember(p){
   for(const f of T().fields){const v=(p.f[f.k]||'').trim();if(!v)continue;const a=histOf(f.k),i=a.indexOf(v);if(i>=0)a.splice(i,1);a.unshift(v);if(a.length>100)a.length=100}
   save();
 }
+function outKey(p){const st=ST();return JSON.stringify([S.tpl,p.f,p.anno||[],p.off,+p.time,st.scale,st.logo,st.opacity,st.longEdge,st.quality,st.ratio||null,st.labels,st.timeLabel])}
+async function renderBlob(p){const c=await render(p,ST().longEdge);const b=await new Promise(r=>c.toBlob(r,'image/jpeg',ST().quality));c.width=c.height=0;return b}
+let preT;
+function prerender(){clearTimeout(preT);preT=setTimeout(async()=>{const p=photos[cur];if(!p||BUSY)return;const k=outKey(p);if(p.cache&&p.cache.key===k)return;
+  try{const b=await renderBlob(p);if(!BUSY&&outKey(p)===k)p.cache={key:k,blob:b}}catch(e){}},1500)}
 async function makeFile(p){
-  const c=await render(p,ST().longEdge);
-  const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',ST().quality));
+  const k=outKey(p);
+  const blob=(p.cache&&p.cache.key===k)?p.cache.blob:await renderBlob(p);p.cache={key:k,blob};
   S.seq[S.tpl]++;const t=T(),tf=t.fields.find(f=>f.title);
   const d=p.time,ds=`${d.getFullYear()}${pad2(d.getMonth()+1)}${pad2(d.getDate())}`;
   const name=[t.short,clean(p.f[tf.k]),clean(p.f.loc),clean(p.f.defect),ds,String(S.seq[S.tpl]).padStart(3,'0')].filter(Boolean).join('_')+'.jpg';
-  remember(p);return {name,blob};
+  remember(p);return {name,blob,pid:p.id};
 }
 async function deliver(files){
   const dl=await Promise.race([dlP,new Promise(r=>setTimeout(()=>r(null),1500))]);
@@ -671,7 +713,7 @@ async function deliver(files){
 const toDataURL=b=>new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(b)});
 let OUT=[];
 async function showOut(files){
-  OUT=files;const L=$('outL');L.innerHTML='';$('outT').textContent=`輸出完成（${files.length} 張）`;
+  OUT=files;OUTURL.forEach(u=>URL.revokeObjectURL(u));OUTURL=[];const L=$('outL');L.innerHTML='';$('outT').textContent=`輸出完成（${files.length} 張）`;
   const canShare=f=>{try{return !!(navigator.canShare&&navigator.canShare({files:f}))}catch(e){return false}};
   const fileOf=f=>new File([f.blob],f.name,{type:f.blob.type||'image/jpeg'});
   const all=canShare(files.map(fileOf));
@@ -681,24 +723,36 @@ async function showOut(files){
   $('outTip').innerHTML=IOS?(all?'按上方綠色「<b>存到照片</b>」→ 在選單選「<b>儲存 '+files.length+' 張影像</b>」，就會存進照片 App。':'請<b>長按每張圖片 →「加入照片」</b>存進照片 App。')
     :'如果沒有自動下載：<b>長按圖片 →「下載圖片」/「儲存影像」</b>，或按「分享」存到相簿、傳 LINE。';
   for(const f of files){
-    const d=document.createElement('div');d.className='it';const img=new Image();img.src=await toDataURL(f.blob);img.alt=f.name;
+    const d=document.createElement('div');d.className='it';const img=new Image();const u=URL.createObjectURL(f.blob);OUTURL.push(u);img.src=u;img.alt=f.name;img.loading='lazy';
+    if(f.pid){img.style.cursor='pointer';img.onclick=()=>editFromOut(f.pid)}
     const nm=document.createElement('div');nm.className='nm';nm.textContent=(f.orig?'【原圖】':'')+f.name;
     const bt=document.createElement('div');bt.className='bt';
     const b1=document.createElement('button');b1.textContent=IOS?'存到「檔案」':'⬇ 下載';b1.onclick=()=>{const a=document.createElement('a');a.href=img.src;a.download=f.name;document.body.appendChild(a);a.click();a.remove()};
     bt.appendChild(b1);
+    if(f.pid){const be=document.createElement('button');be.className='edit';be.textContent='✏ 修改';be.onclick=()=>editFromOut(f.pid);bt.appendChild(be)}
     if(canShare([fileOf(f)])){const b2=document.createElement('button');b2.textContent='📤 分享';b2.onclick=()=>navigator.share({files:[fileOf(f)]}).catch(()=>{});bt.appendChild(b2)}
     d.append(img,nm,bt);L.appendChild(d);
   }
   $('out').classList.add('show');
 }
-$('outX').onclick=()=>{$('out').classList.remove('show');$('outL').innerHTML='';OUT=[]};
+let OUTURL=[];
+function closeOut(){$('out').classList.remove('show');$('outL').innerHTML='';OUT=[];OUTURL.forEach(u=>URL.revokeObjectURL(u));OUTURL=[]}
+$('outX').onclick=()=>{closeOut();toTop()};
+function editFromOut(pid){const i=photos.findIndex(p=>p.id===pid);closeOut();if(i<0)return toast('這張已從清單移除');cur=i;saveCur();unlock(photos[i]);
+  setTimeout(()=>{try{$('prev').scrollIntoView({behavior:'smooth',block:'start'})}catch(e){}},50);toast('已解鎖，改完再按「儲存這張」')}
 $('outShare').onclick=()=>{const fl=OUT.map(f=>new File([f.blob],f.name,{type:f.blob.type||'image/jpeg'}));navigator.share({files:fl}).then(()=>toast('完成')).catch(e=>{if(e&&e.name!=='AbortError')toast('分享失敗，請改用長按圖片儲存')})};
 function loadZip(){return window.JSZip?Promise.resolve():new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s)})}
-async function run(list){
+function toTop(){try{document.querySelector('.add').scrollIntoView({behavior:'smooth',block:'center'})}catch(e){window.scrollTo(0,0)}}
+let BUSY=false;
+async function run(list){BUSY=true;try{await run2(list)}finally{BUSY=false}}
+async function run2(list){
   mask(true,'產生中…');
   try{const out=[];for(let i=0;i<list.length;i++){mask(true,`產生中 ${i+1}/${list.length}`);out.push(await makeFile(list[i]))}
     if(IOS&&ST().keepOrig)list.forEach(p=>{if(p.fromCam){const d=p.time;out.push({name:`原圖_${T().short}_${d.getFullYear()}${pad2(d.getMonth()+1)}${pad2(d.getDate())}_${pad2(d.getHours())}${pad2(d.getMinutes())}${pad2(d.getSeconds())}.jpg`,blob:p.file,orig:true})}});
-    mask(false);const msg=await deliver(out);list.forEach(p=>{p.done=true;persist(p,true)});if(msg)toast(msg)}
+    mask(false);
+    const P=photos[cur];if(P&&list.includes(P)){S.last[S.tpl]=Object.assign({},P.f);S.lastc[S.tpl]=clone(P.comp||{})||{};if(!pinned()){S.last[S.tpl].defect='';delete S.lastc[S.tpl].defect}save()}
+    list.forEach(p=>{p.done=true;persist(p,true)});ORD={};drawAll();toTop();
+    const msg=await deliver(out);if(msg)toast(msg)}
   catch(e){mask(false);toast(e&&e.code==='declined'?'已取消':'儲存失敗：'+(e&&(e.message||e.code)||e))}
   drawStrip();drawForm();
 }
