@@ -83,6 +83,16 @@ input[type=file]{display:none}
 .gs .chip{flex:0 0 auto;white-space:nowrap}
 .chip .sp{color:#f29600;margin-right:3px;font-size:12px}
 .chip.sel .sp{color:#fff}
+.qbar{display:none;gap:8px;margin-top:8px}
+.qbar.show{display:flex}
+.qbar .btn{flex:1;padding:12px 8px;font-size:15px;text-align:center}
+.qbar .btn:disabled{opacity:.6}
+.gl.rel{display:flex;flex-direction:column;align-items:flex-end;line-height:1.15}
+.gl.rel b{color:var(--c);font-size:13px}
+.gl.rel small{font-size:10.5px;font-weight:500}
+.morec{color:var(--c);border-style:dashed!important;font-weight:700}
+.chip.other{opacity:.75}
+.osep{flex:0 0 auto;align-self:center;font-size:11px;color:var(--mute);padding:0 2px 0 6px;border-left:1px solid var(--line)}
 .addc{color:var(--mute);border-style:dashed!important}
 .addbox{display:flex;gap:4px;flex:0 0 auto}
 .addbox input{width:7em;font-size:14px;padding:5px 8px;border:1px solid var(--c);border-radius:999px;font-family:inherit}
@@ -227,6 +237,7 @@ window.addEventListener('unhandledrejection',function(e){var x=e.reason;__showEr
   <div class="strip" id="strip"></div>
   <div class="prev" id="prev"><div class="empty">按「拍照」會開啟手機原相機<br>或用「相簿多選」一次匯入現場拍好的照片</div></div>
   <div class="warn" id="warn"></div>
+  <div class="qbar" id="qbar"><button class="btn pri" id="qSave">💾 儲存這張</button><label class="btn" id="qSame">📸 同缺失再拍<input id="cam2" type="file" accept="image/*" capture="environment"></label></div>
   <button class="btn annoB" id="annoB" style="display:none">✏ 標註缺失（框選・箭頭・文字）</button>
   <div class="look" id="look">
     <label><span>水印大小 <b id="qS">100%</b></span><input type="range" id="qSi" min="50" max="200" step="5"></label>
@@ -271,7 +282,7 @@ window.addEventListener('unhandledrejection',function(e){var x=e.reason;__showEr
 
 <script>
 if(!CanvasRenderingContext2D.prototype.roundRect){CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){r=Math.min(r,w/2,h/2);this.moveTo(x+r,y);this.arcTo(x+w,y,x+w,y+h,r);this.arcTo(x+w,y+h,x,y+h,r);this.arcTo(x,y+h,x,y,r);this.arcTo(x,y,x+w,y,r);this.closePath();return this}}
-const APP_VER='2.1';
+const APP_VER='2.3';
 const IOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 const LOGO_A="data:image/jpeg;base64,";
 const LOGO_B="data:image/jpeg;base64,";
@@ -306,8 +317,29 @@ const LOC_GROUPS=[
   {k:'sub',label:'附屬',items:['陽台','前陽台','後陽台','工作陽台','露台','衛浴','更衣室','儲藏室']}];
 const DEF_POS=['門','門框','窗','窗框','地磚','壁磚','二丁掛','牆面','天花板','踢腳板','櫥櫃','插座','開關','燈具','止水閥','龍頭','排水孔','馬桶','洗手台','欄杆'];
 const DEF_STATE=['填縫','填縫不良','刮傷','破損','空心','矽利康收邊不良','矽利康填補','油漆污染','不平整','縫隙','鬆動','滲水','啟動不順','中火線接反','地線未接','未完成'];
+const DEF_REL={
+  '門':['刮傷','凹陷','髒污','縫隙','開關不順','門鎖異常','門弓器異常','矽利康收邊不良','油漆污染','鬆動'],
+  '門框':['刮傷','凹陷','縫隙','填縫不良','矽利康收邊不良','油漆污染','髒污','未完成'],
+  '窗':['刮傷','髒污','開關不順','紗窗破損','玻璃刮傷','縫隙','滲水','五金鬆動'],
+  '窗框':['刮傷','填縫不良','矽利康收邊不良','縫隙','滲水','髒污','油漆污染'],
+  '地磚':['空心','破損','填縫','填縫不良','不平整','高低差','刮傷','髒污','色差'],
+  '壁磚':['空心','破損','填縫','填縫不良','不平整','高低差','缺角','髒污'],
+  '二丁掛':['空心','破損','填縫不良','缺角','不平整','髒污'],
+  '牆面':['不平整','裂縫','油漆污染','孔洞未填補','髒污','刮傷','滲水','壁癌'],
+  '天花板':['裂縫','不平整','油漆污染','滲水','孔洞未填補','髒污','維修孔未封'],
+  '踢腳板':['縫隙','鬆動','刮傷','矽利康收邊不良','髒污','未完成'],
+  '櫥櫃':['刮傷','門片不平','開關不順','五金鬆動','縫隙','矽利康收邊不良','髒污'],
+  '插座':['中火線接反','地線未接','無電','面板歪斜','面板鬆動','面板破損'],
+  '開關':['無作用','控制錯誤','面板歪斜','面板鬆動','面板破損'],
+  '燈具':['不亮','鬆動','歪斜','燈罩破損'],
+  '止水閥':['啟動不順','滲水','鬆動','無作用'],
+  '龍頭':['鬆動','滲水','出水異常','冷熱水相反','刮傷'],
+  '排水孔':['排水不順','坡度不良','堵塞','未清潔','異味'],
+  '馬桶':['鬆動','滲水','沖水異常','矽利康收邊不良','刮傷','髒污'],
+  '洗手台':['鬆動','滲水','排水不順','矽利康收邊不良','刮傷','破損'],
+  '欄杆':['鬆動','刮傷','生鏽','焊接不良','高度不足']};
 const FORMS={
-  jx:{loc:{mode:'seq',groups:LOC_GROUPS},item:{mode:'multi',groups:[{k:'pos',label:'缺失位置',items:DEF_POS}]},defect:{mode:'multi',groups:[{k:'state',label:'缺失狀態',items:DEF_STATE}]}},
+  jx:{loc:{mode:'seq',groups:LOC_GROUPS},item:{mode:'multi',groups:[{k:'pos',label:'缺失位置',items:DEF_POS}]},defect:{mode:'multi',relFrom:'item',groups:[{k:'state',label:'缺失狀態',items:DEF_STATE}]}},
   xf:{loc:{mode:'seq',groups:LOC_GROUPS},defect:{mode:'pairs',groups:[{k:'pos',label:'缺失位置',items:DEF_POS},{k:'state',label:'缺失狀況',items:DEF_STATE}]}},
   ys:{loc:{mode:'seq',groups:LOC_GROUPS},defect:{mode:'pairs',groups:[{k:'pos',label:'缺失位置',items:DEF_POS},{k:'state',label:'缺失狀況',items:DEF_STATE}]}}};
 S.g=S.g||{};S.hist=S.hist||{};S.lastc=S.lastc||{};
@@ -413,9 +445,9 @@ function wrap(x,text,max,maxLines){
   return out;
 }
 function drawWM(x,W,H,p){
-  const t=T(),st=ST(),u=Math.min(W,H)/100*(st.scale/100);
-  const fs=3.2*u,pd=1.3*u,lh=fs*1.38,m=1.3*u,bw=Math.min(t.boxW*u,W-2*m);
-  const ls=(6.2*u-1.4*u)*((st.logo||100)/100),headH=Math.max(6.2*u,ls+1.4*u);
+  const t=T(),st=ST(),u=Math.min(W,H)/100*(st.scale/100),wm=t.wm||{};
+  const fs=(wm.fs||3.2)*u,pd=1.3*u,lh=fs*1.38,m=1.3*u,bw=Math.min(t.boxW*u,W-2*m),hb=(wm.headBase||6.2)*u;
+  const ls=(hb-1.4*u)*((st.logo||100)/100),headH=Math.max(hb,ls+1.4*u);
   const rows=[];
   for(const f of t.fields){if(f.title)continue;const v=(p.f[f.k]||'').trim();if(v)rows.push([lab(f),v,f.multi?3:2])}
   if(!t.noTime)rows.push([st.timeLabel,fmtT(p.time),1]);
@@ -425,20 +457,22 @@ function drawWM(x,W,H,p){
   const n=lines.reduce((s,l)=>s+l.length,0),bodyH=pd*1.4+n*lh,boxH=headH+bodyH;
   const X=m,Y=H-m-boxH,R=1.1*u;
   x.save();x.beginPath();x.roundRect(X,Y,bw,boxH,R);x.clip();
-  x.fillStyle=t.color;x.fillRect(X,Y,bw,headH);
-  x.fillStyle=`rgba(236,236,234,${st.opacity})`;x.fillRect(X,Y+headH,bw,bodyH);
+  x.fillStyle=wm.head||t.color;x.fillRect(X,Y,bw,headH);
+  x.fillStyle=`rgba(${wm.body||'236,236,234'},${st.opacity})`;x.fillRect(X,Y+headH,bw,bodyH);
   x.restore();
   // logo
   const lx=X+0.7*u,ly=Y+(headH-ls)/2,lg=logos[S.tpl];
-  x.save();x.beginPath();x.roundRect(lx,ly,ls,ls,0.6*u);x.fillStyle='#fff';x.fill();x.clip();
+  x.save();x.beginPath();x.roundRect(lx,ly,ls,ls,0.6*u);if(!wm.logoBare){x.fillStyle='#fff';x.fill()}x.clip();
   if(lg.complete)x.drawImage(lg,lx,ly,ls,ls);x.restore();
+  if(wm.divider){const dx=lx+ls+0.7*u;x.save();x.strokeStyle='rgba(255,255,255,.85)';x.lineWidth=Math.max(1,0.22*u);x.beginPath();x.moveTo(dx,Y+0.9*u);x.lineTo(dx,Y+headH-0.9*u);x.stroke();x.restore()}
   // title
   const title=t.titlePrefix+((t.fields.find(f=>f.title)&&p.f[t.fields.find(f=>f.title).k])||'');
   let tfs=fs*1.08;x.font=`700 ${tfs}px ${FONT}`;const tx=lx+ls+1.2*u,tmax=X+bw-tx-pd;
   while(x.measureText(title).width>tmax&&tfs>fs*0.6){tfs*=0.94;x.font=`700 ${tfs}px ${FONT}`}
-  x.fillStyle='#fff';
+  x.fillStyle='#fff';x.save();if(wm.shadow){x.shadowColor='rgba(40,60,45,.35)';x.shadowBlur=0.6*u;x.shadowOffsetY=0.12*u}
   if(t.titleCenter){x.textAlign='center';x.fillText(title,(tx+X+bw-pd)/2,Y+headH/2+u*0.15);x.textAlign='left'}
   else x.fillText(title,tx,Y+headH/2+u*0.15);
+  x.restore();
   // rows
   x.font=`${fs}px ${FONT}`;x.fillStyle='#1d1d1d';let yy=Y+headH+pd*0.7+lh/2;
   rows.forEach((r,i)=>{x.fillText(r[0]+'：',X+pd,yy);lines[i].forEach(l=>{x.fillText(l,X+pd+lw,yy);yy+=lh})});
@@ -476,6 +510,7 @@ async function addFiles(list,opt={}){
   const base=Object.assign({},useDraft?S.last[S.tpl]:P.f);
   const bcomp=clone(useDraft?S.lastc[S.tpl]:(P.comp||{}))||{};
   if(!useDraft&&!pinned()){base.defect='';delete bcomp.defect}
+  if(opt.copy){Object.keys(base).forEach(k=>delete base[k]);Object.assign(base,opt.copy.f);Object.keys(bcomp).forEach(k=>delete bcomp[k]);Object.assign(bcomp,clone(opt.copy.comp)||{})}
   for(const file of list){
     const time=(await exifDate(file))||new Date(file.lastModified||Date.now());
     const p={id:++uid,file,time,f:Object.assign({},base),off:50,done:false,thumb:'',fromCam:!!opt.fromCam,comp:clone(bcomp)};
@@ -490,6 +525,8 @@ async function makeThumb(p){
   catch(e){p.thumb='';p.bad=e.message}
   persist(p);drawStrip();
 }
+$('qSave').onclick=()=>{const p=photos[cur];if(p&&!p.done)run([p])};
+$('cam2').onchange=e=>{const fs=[...e.target.files];e.target.value='';if(!fs.length)return;const src=photos[cur];addFiles(fs,{fromCam:true,copy:src});if(ST().keepOrig&&!IOS)saveOrig(fs)};
 $('cam').onchange=e=>{const fs=[...e.target.files];e.target.value='';if(!fs.length)return;addFiles(fs,{fromCam:true});if(ST().keepOrig&&!IOS)saveOrig(fs)};
 async function saveOrig(fs){
   for(const f of fs){
@@ -520,6 +557,7 @@ function drawStrip(){
     d.onclick=e=>{if(e.target.classList.contains('x')){photos.splice(i,1);DB.del(p.id);if(bmpCache.id===p.id)bmpCache={id:null,bmp:null};cur=Math.min(cur,photos.length-1);saveCur();drawAll();return}cur=i;saveCur();drawAll()};
     s.appendChild(d)});
   const has=photos.length>0;$('saveOne').disabled=!has;$('saveAll').disabled=!has;
+  {const p=photos[cur];$('qbar').classList.toggle('show',!!p);if(p){$('qSave').disabled=!!p.done;$('qSave').textContent=p.done?'✓ 已儲存':'💾 儲存這張'}}
   $('saveAll').textContent=photos.length>1?`全部輸出（${photos.length}）`:'全部輸出';
   $('prevB').disabled=cur<=0;$('nextB').disabled=cur>=photos.length-1;
 }
@@ -545,7 +583,9 @@ function applyChip(k,gk,v){const cfg=FCFG(k);let c=getComp(k);if(!c){c={};const 
   else{c.items=c.items||[];const L=c.items[c.items.length-1];
     if(gk==='pos'){if(L&&!L.s){if(L.p===v)c.items.pop();else L.p=v}else c.items.push({p:v})}
     else{if(L&&!L.s)L.s=v;else if(L&&L.s===v&&!L.p)c.items.pop();else c.items.push({s:v})}}
+  if(gk==='state'){const pos=cfg.mode==='pairs'?((c.items||[]).slice(-1)[0]||{}).p:relPos(k);if(pos&&chipOnC(cfg,c,gk,v)){addRel(k,pos,v);bump(k,'state@'+pos,v)}}
   setVal(k,compText(k,c),c);drawForm();}
+function chipOnC(cfg,c,gk,v){if(cfg.mode==='multi')return (c.list||[]).includes(v);const L=(c.items||[]).slice(-1)[0];return !!L&&L.s===v}
 function chipOn(k,gk,v){const c=getComp(k),cfg=FCFG(k);if(!c)return false;
   if(cfg.mode==='seq')return (c.sel||{})[gk]===v;if(cfg.mode==='multi')return (c.list||[]).includes(v);
   const L=(c.items||[])[c.items.length-1];return !!L&&(gk==='pos'?L.p===v:L.s===v);}
@@ -558,6 +598,14 @@ function ordered(fk,gk,arr){const key=S.tpl+'|'+fk+'|'+gk;let o=ORD[key];
   return o.filter(v=>arr.includes(v)).concat(arr.filter(v=>!o.includes(v)));}
 function bump(fk,gk,v){const u=U(fk,gk);u[v]=(u[v]||0)+1;save()}
 function toggleStar(fk,gk,v){const st=STR(fk,gk),i=st.indexOf(v);if(i>=0)st.splice(i,1);else st.push(v);ORD={};save()}
+S.rel=S.rel||{};
+function REL(fk,pos){const a=S.rel[S.tpl]=S.rel[S.tpl]||{},b=a[fk]=a[fk]||{};if(!b[pos])b[pos]=(DEF_REL[pos]||[]).slice();return b[pos]}
+function addRel(fk,pos,v){if(!pos||!v)return;const L=REL(fk,pos);if(!L.includes(v)){L.push(v);ORD={}}save()}
+function relPos(fk){const cfg=FCFG(fk);if(!cfg)return null;
+  if(cfg.mode==='pairs'){const c=getComp(fk),L=c&&c.items&&c.items[c.items.length-1];return L&&L.p||null}
+  if(cfg.relFrom){const c=getComp(cfg.relFrom),l=c&&c.list;return l&&l.length?l[l.length-1]:null}
+  return null}
+const EXP={};
 function histOf(k){return S.hist[S.tpl][k]=S.hist[S.tpl][k]||[]}
 let acHide;
 function drawForm(){
@@ -596,15 +644,25 @@ function drawForm(){
     let markSel=()=>{};
     if(cfg){
       cfg.groups.forEach(g=>{const row=document.createElement('div');row.className='grp';
-        row.innerHTML=`<span class="gl">${esc(g.label)}</span>`;const gs=document.createElement('div');gs.className='gs';gs.dataset.id=f.k+'.'+g.k;
-        const arr=S.g[S.tpl][f.k][g.k]=S.g[S.tpl][f.k][g.k]||[];
-        const stars=STR(f.k,g.k);
-        ordered(f.k,g.k,arr).forEach(v=>{const b=document.createElement('button');const on=stars.includes(v);b.className='chip'+(chipOn(f.k,g.k,v)?' sel':'')+(on?' star':'');
-          b.innerHTML=(manage[f.k]?`<span class="sp">${on?'★':'☆'}</span>`:(on?'<span class="sp">★</span>':''))+esc(v)+(manage[f.k]?'<span class="d">×</span>':'');
-          b.onclick=e=>{if(manage[f.k]){if(e.target.classList.contains('d')){arr.splice(arr.indexOf(v),1);ORD={};save()}else toggleStar(f.k,g.k,v);drawForm();return}bump(f.k,g.k,v);applyChip(f.k,g.k,v)};gs.appendChild(b)});
+        const all=S.g[S.tpl][f.k][g.k]=S.g[S.tpl][f.k][g.k]||[];
+        const pos=(g.k==='state'&&(cfg.mode==='pairs'||cfg.relFrom))?relPos(f.k):null;
+        const rel=pos?REL(f.k,pos):null,okey=pos?'state@'+pos:g.k;
+        const arr=rel||all;
+        row.innerHTML=pos?`<span class="gl rel"><b>${esc(pos)}</b><small>狀況</small></span>`:`<span class="gl">${esc(g.label)}</span>`;
+        const gs=document.createElement('div');gs.className='gs';gs.dataset.id=f.k+'.'+g.k+(pos?'@'+pos:'');
+        const stars=STR(f.k,okey);
+        const showList=ordered(f.k,okey,arr).slice();
+        const others=pos?all.filter(v=>!arr.includes(v)):[];
+        const expanded=pos&&EXP[f.k]===pos;
+        const mkChip=(v,isOther)=>{const b=document.createElement('button');const on=!isOther&&stars.includes(v);b.className='chip'+(chipOn(f.k,g.k,v)?' sel':'')+(on?' star':'')+(isOther?' other':'');
+          b.innerHTML=(manage[f.k]&&!isOther?`<span class="sp">${on?'★':'☆'}</span>`:(on?'<span class="sp">★</span>':''))+esc(v)+(manage[f.k]&&!isOther?'<span class="d">×</span>':'');
+          b.onclick=e=>{if(manage[f.k]&&!isOther){if(e.target.classList.contains('d')){arr.splice(arr.indexOf(v),1);ORD={};save()}else toggleStar(f.k,okey,v);drawForm();return}bump(f.k,g.k,v);if(isOther)EXP[f.k]=null;applyChip(f.k,g.k,v)};return b};
+        showList.forEach(v=>gs.appendChild(mkChip(v,false)));
+        if(pos&&others.length){if(expanded){const sp=document.createElement('span');sp.className='osep';sp.textContent='其他';gs.appendChild(sp);others.forEach(v=>gs.appendChild(mkChip(v,true)))}
+          else{const ob=document.createElement('button');ob.className='chip morec';ob.textContent='其他⋯';ob.onclick=()=>{EXP[f.k]=pos;drawForm();setTimeout(()=>{const e=document.querySelector(`.gs[data-id="${f.k}.${g.k}@${pos}"]`);if(e)e.scrollTo({left:e.scrollWidth,behavior:'smooth'})},30)};gs.appendChild(ob)}}
         const add=document.createElement('button');add.className='chip addc';add.textContent='＋';
-        add.onclick=()=>{const box=document.createElement('span');box.className='addbox';box.innerHTML='<input placeholder="新增選項"><button>✓</button>';add.replaceWith(box);const ip=box.querySelector('input');ip.focus();
-          const ok=()=>{const v=ip.value.trim();if(v&&!arr.includes(v)){arr.push(v);save();toast('已加入「'+g.label+'」')}drawForm()};box.querySelector('button').onclick=ok;ip.onkeydown=e=>{if(e.key==='Enter')ok()};ip.onblur=()=>setTimeout(()=>{if(document.body.contains(box)&&!ip.value.trim())drawForm()},200)};
+        add.onclick=()=>{const box=document.createElement('span');box.className='addbox';box.innerHTML=`<input placeholder="${pos?'新增「'+esc(pos)+'」的狀況':'新增選項'}"><button>✓</button>`;add.replaceWith(box);const ip=box.querySelector('input');ip.focus();
+          const ok=()=>{const v=ip.value.trim();if(v){if(!arr.includes(v))arr.push(v);if(rel&&!all.includes(v))all.push(v);ORD={};save();toast(pos?'已加入「'+pos+'」的狀況':'已加入「'+g.label+'」')}drawForm()};box.querySelector('button').onclick=ok;ip.onkeydown=e=>{if(e.key==='Enter')ok()};ip.onblur=()=>setTimeout(()=>{if(document.body.contains(box)&&!ip.value.trim())drawForm()},200)};
         gs.appendChild(add);row.appendChild(gs);w.appendChild(row)});
     }else{
       const cs=document.createElement('div');cs.className='chips';
