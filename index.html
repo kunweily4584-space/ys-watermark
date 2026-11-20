@@ -99,6 +99,46 @@ input[type=file]{display:none}
 .morec{color:var(--c);border-style:dashed!important;font-weight:700}
 .chip.other{opacity:.75}
 .osep{flex:0 0 auto;align-self:center;font-size:11px;color:var(--mute);padding:0 2px 0 6px;border-left:1px solid var(--line)}
+details.card.setp{margin-top:10px;padding:0}
+.setp>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer}
+.setp>summary::-webkit-details-marker{display:none}
+.setp>summary span{font-weight:700}
+.setp>summary small{flex:1;text-align:right;color:var(--mute);font-weight:500;font-size:13px}
+.setp>summary::after{content:"▾";color:var(--mute);font-size:13px}
+.setp[open]>summary::after{content:"▴"}
+.setp>*:not(summary){margin-left:14px;margin-right:14px}
+.setp .look{border:0;padding:4px 0 0}
+.adv{margin-top:12px;border-top:1px dashed var(--line);padding-top:10px}
+.adv summary{font-size:13px;color:var(--mute);cursor:pointer}
+.foldB{display:block;width:calc(100% - 28px);margin:14px 14px 14px!important;padding:10px;font-size:14px}
+/* 橫式（手機橫拿）*/
+@media (orientation:landscape) and (max-height:600px){
+  header{padding:6px 12px!important;border-radius:0!important}
+  header .tpl img{width:30px!important;height:30px!important}
+  header .tpl{font-size:15px!important}
+  header .tpl small,.stripe,.step,.tip0,.iosGuide{display:none!important}
+  body{padding-bottom:0!important}
+  main{display:grid;grid-template-columns:minmax(0,44%) minmax(0,1fr);gap:14px;align-items:start;max-width:none;padding:8px 12px 12px!important}
+  .colR{min-height:100vh}
+  .colL{position:sticky;top:0;height:100vh;overflow-y:auto;padding:4px 2px 12px;scrollbar-width:none}
+  .colL::-webkit-scrollbar{display:none}
+  .add{margin:0 0 6px!important;gap:6px}
+  .add .btn{padding:10px 6px!important;font-size:15px!important}
+  .strip{padding:4px 0 6px!important}
+  .th{width:52px!important;height:52px!important}
+  .prev{min-height:80px}
+  .prev canvas{max-height:44vh}
+  .warn{font-size:12px!important;padding:4px 8px!important}
+  .qbar .btn{padding:11px 6px;font-size:14px}
+  .annoB{padding:9px!important;font-size:14px}
+  .colR .card{margin-top:4px}
+  #outL{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  #ed.show{display:grid;grid-template-columns:minmax(0,1fr) 176px;grid-template-rows:auto minmax(0,1fr) auto}
+  #ed .top{grid-column:1/3}
+  #ed .cv{grid-column:1;grid-row:2}
+  #tbar{grid-column:1;grid-row:3}
+  #edTools{grid-column:2;grid-row:2/4;flex-direction:row;align-content:flex-start;overflow-y:auto}
+}
 .addc{color:var(--mute);border-style:dashed!important}
 .addbox{display:flex;gap:4px;flex:0 0 auto}
 .addbox input{width:7em;font-size:14px;padding:5px 8px;border:1px solid var(--c);border-radius:999px;font-family:inherit}
@@ -148,8 +188,7 @@ body.ios .iosGuide{display:block}
 .credit{text-align:center;font-size:11px;color:var(--mute);opacity:.75;margin:0 0 8px;letter-spacing:.5px}
 .ver{text-align:center;font-size:12px;color:var(--mute);margin:14px 0 4px}
 #out .hd .big{background:#1fa463!important;font-size:16px;padding:11px 14px}
-.look{display:none;gap:12px;margin-top:8px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 12px}
-.look.show{display:flex}
+.look{display:flex;margin-top:10px!important;gap:12px;margin-top:8px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 12px}
 .look label{flex:1;font-size:13px;color:var(--mute);display:flex;flex-direction:column;gap:2px}
 .look b{color:var(--ink)}
 .look input{width:100%;accent-color:var(--c)}
@@ -229,6 +268,7 @@ window.addEventListener('unhandledrejection',function(e){var x=e.reason;__showEr
 <div class="upd" id="upd"></div>
 <header><div class="tpls" id="tpls"></div><div class="stripe"></div></header>
 <main>
+ <div class="colL">
   <div class="step"><b>01</b>拍照・匯入</div>
   <div class="add">
     <label class="btn pri">📷 拍照<input id="cam" type="file" accept="image/*" capture="environment"></label>
@@ -245,11 +285,22 @@ window.addEventListener('unhandledrejection',function(e){var x=e.reason;__showEr
   <div class="warn" id="warn"></div>
   <div class="qbar" id="qbar"><button class="btn pri" id="qSave">💾 儲存這張</button><label class="btn" id="qSame">📸 同缺失再拍<input id="cam2" type="file" accept="image/*" capture="environment"></label></div>
   <button class="btn annoB" id="annoB" style="display:none">✏ 標註缺失（框選・箭頭・文字）</button>
-  <div class="look" id="look">
-    <label><span>水印大小 <b id="qS">100%</b></span><input type="range" id="qSi" min="50" max="200" step="5"></label>
-    <label><span>Logo 大小 <b id="qL">100%</b></span><input type="range" id="qLi" min="50" max="250" step="5"></label>
-  </div>
   <div class="off" id="offw"><span>裁切位置</span><input type="range" id="off" min="0" max="100" value="50"></div>
+  <details class="card setp" id="setc"><summary><span>⚙ 水印設定</span><small id="setSum"></small></summary>
+    <div class="look" id="look">
+      <label><span>水印大小 <b id="qS">100%</b></span><input type="range" id="qSi" min="50" max="200" step="5"></label>
+      <label><span>Logo 大小 <b id="qL">100%</b></span><input type="range" id="qLi" min="50" max="250" step="5"></label>
+    </div>
+    <div class="set" id="set"></div>
+    <details class="adv"><summary>進階：欄位名稱・還原・清空</summary><div class="set" id="set2"></div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn" id="resetChips" style="flex:1;padding:8px;font-size:14px">還原預設快速選項</button>
+        <button class="btn" id="clearAll" style="flex:1;padding:8px;font-size:14px">清空照片</button>
+      </div></details>
+    <button class="btn foldB" id="foldB">收起 ▴</button>
+  </details>
+ </div>
+ <div class="colR">
 
   <div class="step"><b>02</b>填寫水印資訊</div>
   <div class="card" id="form"></div>
@@ -257,14 +308,9 @@ window.addEventListener('unhandledrejection',function(e){var x=e.reason;__showEr
   <div class="bar"><button class="btn" id="saveOne" disabled>儲存這張</button><button class="btn pri" id="saveAll" disabled>全部輸出</button></div>
   <div class="nav"><button class="btn" id="prevB">‹ 上一張</button><button class="btn" id="nextB">下一張 ›</button></div>
 
-  <details class="card" id="setc"><summary>⚙ 設定（目前範本）</summary><div class="set" id="set"></div>
-    <div style="display:flex;gap:8px;margin-top:12px">
-      <button class="btn" id="resetChips" style="flex:1;padding:8px;font-size:14px">還原預設快速選項</button>
-      <button class="btn" id="clearAll" style="flex:1;padding:8px;font-size:14px">清空照片</button>
-    </div>
-  </details>
   <div class="ver" id="ver"></div>
   <div class="credit">annjohn 與他的ai小夥伴協力製作</div>
+ </div>
 </main>
 <div id="ed">
   <div class="top"><button id="edX">取消</button><b>標註缺失</b><button class="pri" id="edOK">完成</button></div>
@@ -289,7 +335,7 @@ window.addEventListener('unhandledrejection',function(e){var x=e.reason;__showEr
 
 <script>
 if(!CanvasRenderingContext2D.prototype.roundRect){CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){r=Math.min(r,w/2,h/2);this.moveTo(x+r,y);this.arcTo(x+w,y,x+w,y+h,r);this.arcTo(x+w,y+h,x,y+h,r);this.arcTo(x,y+h,x,y,r);this.arcTo(x,y,x+w,y,r);this.closePath();return this}}
-const APP_VER='2.4';
+const APP_VER='2.5';
 const IOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 const LOGO_A="data:image/jpeg;base64,";
 const LOGO_B="data:image/jpeg;base64,";
@@ -534,6 +580,7 @@ async function makeThumb(p){
 }
 $('qSave').onclick=()=>{const p=photos[cur];if(p&&!p.done)run([p])};
 $('cam2').onchange=e=>{const fs=[...e.target.files];e.target.value='';if(!fs.length)return;const src=photos[cur];addFiles(fs,{fromCam:true,copy:src});if(ST().keepOrig&&!IOS)saveOrig(fs)};
+$('cam').addEventListener('click',fold);$('pick').addEventListener('click',fold);$('cam2').addEventListener('click',fold);
 $('cam').onchange=e=>{const fs=[...e.target.files];e.target.value='';if(!fs.length)return;addFiles(fs,{fromCam:true});if(ST().keepOrig&&!IOS)saveOrig(fs)};
 async function saveOrig(fs){
   for(const f of fs){
@@ -702,7 +749,6 @@ function setVal(k,v,comp){
 let tmr;function schedule(){clearTimeout(tmr);tmr=setTimeout(drawPrev,120)}
 async function drawPrev(){
   const box=$('prev'),p=photos[cur];
-  $('look').classList.toggle('show',!!p);
   $('prev').classList.remove('locked');
   if(!p){$('annoB').style.display='none';box.innerHTML='<div class="empty">按「拍照」會開啟手機原相機<br>或用「相簿多選」一次匯入現場拍好的照片</div>';$('warn').style.display='none';$('offw').style.display='none';return}
   let c;try{c=await render(p,1100)}catch(e){box.innerHTML=`<div class="empty">⚠ ${esc(e.message||e)}<br>可以按縮圖上的 ✕ 移除，改用「相簿多選」重新匯入</div>`;$('annoB').style.display='none';return}
@@ -721,26 +767,30 @@ function drawSet(){
   let h=`<span>${IOS?'輸出時附上原圖':'同時儲存原圖'}<br><small style="color:var(--mute)">${IOS?'用 App「拍照」的照片才有':'用「拍照」時才需要'}</small></span><label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="sK" ${st.keepOrig?'checked':''} style="width:22px;height:22px">${st.keepOrig?'開':'關'}</label>
   <span>輸出比例</span><select id="sR">${[['','範本預設（'+T().ratioTxt+'）'],['16,9','橫式 16:9'],['4,3','橫式 4:3'],['3,4','直式 4:3'],['9,16','直式 16:9']].map(o=>`<option value="${o[0]}" ${(st.ratio?st.ratio.join(','):'')===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select>
   <span>輸出長邊</span><select id="sL">${[1600,1920,2560,3200,4000].map(v=>`<option ${v==st.longEdge?'selected':''}>${v}</option>`).join('')}</select>
-  <span>JPEG 品質 <b id="vQ">${st.quality}</b></span><input type="range" id="sQ" min="0.6" max="0.98" step="0.02" value="${st.quality}">
-  <span>底色不透明 <b id="vO">${st.opacity}</b></span><input type="range" id="sO" min="0.4" max="1" step="0.01" value="${st.opacity}">`;
-  for(const f of T().fields)h+=`<span>欄位名稱</span><input data-k="${f.k}" value="${esc(lab(f))}">`;
-  if(!T().noTime)h+=`<span>欄位名稱</span><input id="sT" value="${esc(st.timeLabel)}">`;
-  el.innerHTML=h;
+  <span>JPEG 品質 <b id="vQ">${st.quality}</b></span><input type="range" id="sQ" min="0.6" max="0.98" step="0.02" value="${st.quality}">`;
+  h=`<span>底色不透明 <b id="vO">${st.opacity}</b></span><input type="range" id="sO" min="0.4" max="1" step="0.01" value="${st.opacity}">`+h;
+  let h2='';
+  for(const f of T().fields)h2+=`<span>${esc(f.label)}</span><input data-k="${f.k}" value="${esc(lab(f))}">`;
+  if(!T().noTime)h2+=`<span>拍攝時間</span><input id="sT" value="${esc(st.timeLabel)}">`;
+  el.innerHTML=h;$('set2').innerHTML=h2;
   const [w,hh]=outSize(st.longEdge);
   $('sK').onchange=e=>{st.keepOrig=e.target.checked;save();drawSet();toast(st.keepOrig?'拍照後會同時存原圖':'已關閉存原圖')};
   $('sR').onchange=e=>{st.ratio=e.target.value?e.target.value.split(',').map(Number):null;save();schedule()};
   $('sL').onchange=e=>{st.longEdge=+e.target.value;save();toast(`輸出 ${outSize(st.longEdge).join('×')}`)};
   $('sQ').oninput=e=>{st.quality=+e.target.value;$('vQ').textContent=st.quality;save()};
   $('sO').oninput=e=>{st.opacity=+e.target.value;$('vO').textContent=st.opacity;save();schedule()};
-  el.querySelectorAll('input[data-k]').forEach(i=>i.onchange=()=>{st.labels[i.dataset.k]=i.value.trim();save();drawForm();schedule()});
+  $('set2').querySelectorAll('input[data-k]').forEach(i=>i.onchange=()=>{st.labels[i.dataset.k]=i.value.trim();save();drawForm();schedule()});
   if($('sT'))$('sT').onchange=e=>{st.timeLabel=e.target.value.trim()||'拍攝時間';save();schedule()};
 }
 $('resetChips').onclick=()=>{S.chips[S.tpl]=JSON.parse(JSON.stringify(T().chips));S.g[S.tpl]={};const F=FORMS[S.tpl]||{};for(const fk in F){S.g[S.tpl][fk]={};F[fk].groups.forEach(g=>S.g[S.tpl][fk][g.k]=g.items.slice())}save();drawForm();toast('已還原')};
 $('clearAll').onclick=()=>{DB.clear();photos=[];cur=-1;bmpCache={id:null,bmp:null};drawAll()};
 
-function syncLook(){const st=ST();$('qSi').value=st.scale;$('qS').textContent=st.scale+'%';$('qLi').value=st.logo||100;$('qL').textContent=(st.logo||100)+'%'}
-$('qSi').oninput=e=>{ST().scale=+e.target.value;$('qS').textContent=ST().scale+'%';save();schedule()};
-$('qLi').oninput=e=>{ST().logo=+e.target.value;$('qL').textContent=ST().logo+'%';save();schedule()};
+function syncLook(){const st=ST();$('setSum').textContent=`水印 ${st.scale}%・Logo ${st.logo||100}%`;$('qSi').value=st.scale;$('qS').textContent=st.scale+'%';$('qLi').value=st.logo||100;$('qL').textContent=(st.logo||100)+'%'}
+$('qSi').oninput=e=>{ST().scale=+e.target.value;$('qS').textContent=ST().scale+'%';syncSum();save();schedule()};
+function syncSum(){const st=ST();$('setSum').textContent=`水印 ${st.scale}%・Logo ${st.logo||100}%`}
+function fold(){$('setc').open=false}
+$('foldB').onclick=e=>{e.preventDefault();fold();try{$('prev').scrollIntoView({behavior:'smooth',block:'nearest'})}catch(x){}};
+$('qLi').oninput=e=>{ST().logo=+e.target.value;$('qL').textContent=ST().logo+'%';syncSum();save();schedule()};
 function drawAll(){drawTpls();drawStrip();drawForm();drawSet();syncLook();drawPrev()}
 
 /* ---------- output ---------- */
@@ -820,7 +870,7 @@ $('outShare').onclick=()=>{const fl=OUT.map(f=>new File([f.blob],f.name,{type:f.
 function loadZip(){return window.JSZip?Promise.resolve():new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s)})}
 function toTop(){try{document.querySelector('.add').scrollIntoView({behavior:'smooth',block:'center'})}catch(e){window.scrollTo(0,0)}}
 let BUSY=false;
-async function run(list){BUSY=true;try{await run2(list)}finally{BUSY=false}}
+async function run(list){fold();BUSY=true;try{await run2(list)}finally{BUSY=false}}
 async function run2(list){
   mask(true,'產生中…');
   try{const out=[];for(let i=0;i<list.length;i++){mask(true,`產生中 ${i+1}/${list.length}`);out.push(await makeFile(list[i]))}
