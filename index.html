@@ -60,6 +60,12 @@ input[type=file]{display:none}
 .prev.locked::after{content:"🔒 已儲存";position:absolute;top:10px;right:10px;background:rgba(0,0,0,.65);color:#fff;font-size:13px;padding:4px 10px;border-radius:999px}
 .pin{border:1px solid var(--line)!important;border-radius:999px;padding:2px 9px!important;margin-right:4px}
 .pin.on{background:#f29600!important;color:#fff!important;border-color:#f29600!important}
+.ft{position:sticky;bottom:0;padding:10px 12px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(transparent,#111 35%)}
+.ft button{width:100%;border:0;border-radius:12px;padding:15px;font-size:17px;font-weight:700;background:var(--c);color:#fff;font-family:inherit}
+.snk{position:fixed;left:12px;right:12px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:25;display:flex;align-items:center;gap:10px;background:#222;color:#fff;border-radius:14px;padding:10px 10px 10px 16px;font-size:15px;box-shadow:0 8px 24px rgba(0,0,0,.3);transform:translateY(140%);transition:transform .25s}
+.snk.show{transform:none}
+.snk span{flex:1}
+.snk button{border:0;background:#f29600;color:#fff;font-weight:700;border-radius:10px;padding:9px 14px;font-size:14px;font-family:inherit}
 #out .it .bt .edit{background:#f29600}
 .iw{position:relative}
 .iw input,.iw textarea{padding-right:40px}
@@ -155,7 +161,7 @@ body.ios .iosGuide{display:block}
 #out .hd button,#out .it button{border:0;border-radius:10px;padding:9px 12px;font-size:15px;background:#2c2c2c;color:#fff;font-family:inherit}
 #out .hd .pri{background:var(--c)}
 #out .tip{font-size:13px;color:#ccc;padding:8px 12px;background:#1c1c1c;border-top:1px solid #333;line-height:1.6}
-#out .ls{flex:1;overflow:auto;padding:10px 12px 40px}
+#out .ls{flex:1;overflow:auto;padding:10px 12px 20px}
 #out .it{margin-bottom:16px}
 #out .it img{width:100%;display:block;border-radius:8px;-webkit-touch-callout:default;user-select:auto}
 #out .it .nm{font-size:12px;color:#aaa;margin:6px 0;word-break:break-all}
@@ -276,13 +282,14 @@ window.addEventListener('unhandledrejection',function(e){var x=e.reason;__showEr
 </div>
 <div id="out"><div class="hd"><b id="outT">輸出完成</b><button class="pri" id="outShare">📤 分享全部</button><button id="outX">關閉</button></div>
 <div class="tip" id="outTip"></div>
-<div class="ls" id="outL"></div></div>
+<div class="ls" id="outL"></div><div class="ft"><button id="outBack">← 返回拍照</button></div></div>
+<div class="snk" id="snk"><span></span><button></button></div>
 <div class="toast" id="toast"></div>
 <div class="mask" id="mask"><span id="maskT">處理中…</span></div>
 
 <script>
 if(!CanvasRenderingContext2D.prototype.roundRect){CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){r=Math.min(r,w/2,h/2);this.moveTo(x+r,y);this.arcTo(x+w,y,x+w,y+h,r);this.arcTo(x+w,y+h,x,y+h,r);this.arcTo(x,y+h,x,y,r);this.arcTo(x,y,x+w,y,r);this.closePath();return this}}
-const APP_VER='2.3';
+const APP_VER='2.4';
 const IOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 const LOGO_A="data:image/jpeg;base64,";
 const LOGO_B="data:image/jpeg;base64,";
@@ -765,9 +772,18 @@ async function deliver(files){
   }catch(e){if(e&&e.code==='declined')throw e;await showOut(files);return null}}
   if(IOS){await showOut(files);return null}
   for(const f of files){try{const a=document.createElement('a');a.href=URL.createObjectURL(f.blob);a.download=f.name;document.body.appendChild(a);a.click();a.remove()}catch(e){}await new Promise(r=>setTimeout(r,300))}
+  if(files.length===1){snack('✓ 已下載 1 張','查看／修改',()=>showOut(files));return null}
   await showOut(files);
   return null;
 }
+let snkT;
+function snack(msg,btn,fn){const e=$('snk');e.querySelector('span').textContent=msg;const b=e.querySelector('button');b.textContent=btn;b.onclick=()=>{e.classList.remove('show');fn()};e.classList.add('show');clearTimeout(snkT);snkT=setTimeout(()=>e.classList.remove('show'),6000)}
+let layerPushed=false;
+function pushLayer(){try{history.pushState({wmLayer:1},'');layerPushed=true}catch(e){}}
+function popLayer(){if(layerPushed){layerPushed=false;try{history.back()}catch(e){}}}
+window.addEventListener('popstate',()=>{layerPushed=false;
+  if($('ed').classList.contains('show')){$('ed').classList.remove('show');$('tbar').classList.remove('show');return}
+  if($('out').classList.contains('show')){closeOut(true);toTop()}});
 const toDataURL=b=>new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(b)});
 let OUT=[];
 async function showOut(files){
@@ -791,11 +807,13 @@ async function showOut(files){
     if(canShare([fileOf(f)])){const b2=document.createElement('button');b2.textContent='📤 分享';b2.onclick=()=>navigator.share({files:[fileOf(f)]}).catch(()=>{});bt.appendChild(b2)}
     d.append(img,nm,bt);L.appendChild(d);
   }
+  if(!$('out').classList.contains('show'))pushLayer();
   $('out').classList.add('show');
 }
 let OUTURL=[];
-function closeOut(){$('out').classList.remove('show');$('outL').innerHTML='';OUT=[];OUTURL.forEach(u=>URL.revokeObjectURL(u));OUTURL=[]}
+function closeOut(fromPop){if(!fromPop)popLayer();$('snk').classList.remove('show');$('out').classList.remove('show');$('outL').innerHTML='';OUT=[];OUTURL.forEach(u=>URL.revokeObjectURL(u));OUTURL=[]}
 $('outX').onclick=()=>{closeOut();toTop()};
+$('outBack').onclick=()=>{closeOut();toTop()};
 function editFromOut(pid){const i=photos.findIndex(p=>p.id===pid);closeOut();if(i<0)return toast('這張已從清單移除');cur=i;saveCur();unlock(photos[i]);
   setTimeout(()=>{try{$('prev').scrollIntoView({behavior:'smooth',block:'start'})}catch(e){}},50);toast('已解鎖，改完再按「儲存這張」')}
 $('outShare').onclick=()=>{const fl=OUT.map(f=>new File([f.blob],f.name,{type:f.blob.type||'image/jpeg'}));navigator.share({files:fl}).then(()=>toast('完成')).catch(e=>{if(e&&e.name!=='AbortError')toast('分享失敗，請改用長按圖片儲存')})};
@@ -859,7 +877,7 @@ $('annoB').onclick=async()=>{
   const p=photos[cur];if(!p)return;mask(true,'載入中…');
   ED.base=await render(p,1400,{base:true});ED.list=JSON.parse(JSON.stringify(p.anno||[]));ED.sel=-1;ED.editIdx=-1;
   const c=document.createElement('canvas');c.width=ED.base.width;c.height=ED.base.height;ED.cv=c;
-  $('edCv').innerHTML='';$('edCv').appendChild(c);bindCv(c);edSync();edDraw();mask(false);$('ed').classList.add('show');
+  $('edCv').innerHTML='';$('edCv').appendChild(c);bindCv(c);edSync();edDraw();mask(false);pushLayer();$('ed').classList.add('show');
 };
 function pos(e){const r=ED.cv.getBoundingClientRect();return [Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)),Math.min(1,Math.max(0,(e.clientY-r.top)/r.height))]}
 function openText(idx,val){ED.editIdx=idx;$('tbar').classList.add('show');$('tIn').value=val||'';$('tOK').textContent=idx>=0?'更新':'加上';setTimeout(()=>$('tIn').focus(),50)}
@@ -898,8 +916,8 @@ document.querySelectorAll('#edTools [data-z]').forEach(b=>b.onclick=()=>{ED.z=+b
 $('edU').onclick=()=>{ED.list.pop();ED.sel=-1;edDraw()};
 $('edD').onclick=()=>{if(ED.sel>=0){ED.list.splice(ED.sel,1);ED.sel=-1;edDraw()}};
 $('edC').onclick=()=>{ED.list=[];ED.sel=-1;edDraw()};
-$('edX').onclick=()=>{$('ed').classList.remove('show');$('tbar').classList.remove('show')};
-$('edOK').onclick=()=>{const p=photos[cur];if(p){p.anno=ED.list;p.done=false;persist(p,true)}$('ed').classList.remove('show');$('tbar').classList.remove('show');drawStrip();drawPrev()};
+$('edX').onclick=()=>{$('ed').classList.remove('show');$('tbar').classList.remove('show');popLayer()};
+$('edOK').onclick=()=>{const p=photos[cur];if(p){p.anno=ED.list;p.done=false;persist(p,true)}$('ed').classList.remove('show');$('tbar').classList.remove('show');popLayer();drawStrip();drawPrev()};
 
 function verInit(){
   $('ver').textContent=`${document.title}  v${APP_VER}`;
