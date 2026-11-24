@@ -147,6 +147,9 @@ details.card.setp{margin-top:10px;padding:0}
 .rmc .btn{padding:13px;font-size:16px}
 .rmc .rmx{border:0;background:none;color:#888;font-weight:500}
 .qbar .btn{white-space:nowrap}
+.camRow{display:flex;gap:8px;margin-bottom:8px}
+.camRow .camB{flex:1;margin-bottom:0}
+.camB{display:block;width:100%;text-align:center;padding:14px 10px;font-size:16px;margin-bottom:8px;border-style:dashed!important}
 .addc{color:var(--mute);border-style:dashed!important}
 .addbox{display:flex;gap:4px;flex:0 0 auto}
 .addbox input{width:7em;font-size:14px;padding:5px 8px;border:1px solid var(--c);border-radius:999px;font-family:inherit}
@@ -313,6 +316,7 @@ window.addEventListener('unhandledrejection',function(e){var x=e.reason;__showEr
   <div class="step"><b>02</b>填寫水印資訊</div>
   <div class="card" id="form"></div>
   <div class="step"><b>03</b>輸出</div>
+  <div class="camRow"><label class="btn camB" id="qNew2">📷 拍新的一張<input id="cam4" type="file" accept="image/*" capture="environment"></label><label class="btn camB" id="qSame2">📸 同缺失再拍<input id="cam5" type="file" accept="image/*" capture="environment"></label></div>
   <div class="bar"><button class="btn" id="saveOne" disabled>儲存這張</button><button class="btn pri" id="saveAll" disabled>全部輸出</button></div>
   <div class="nav"><button class="btn" id="prevB">‹ 上一張</button><button class="btn" id="nextB">下一張 ›</button></div>
 
@@ -345,7 +349,7 @@ window.addEventListener('unhandledrejection',function(e){var x=e.reason;__showEr
 
 <script>
 if(!CanvasRenderingContext2D.prototype.roundRect){CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){r=Math.min(r,w/2,h/2);this.moveTo(x+r,y);this.arcTo(x+w,y,x+w,y+h,r);this.arcTo(x+w,y+h,x,y+h,r);this.arcTo(x,y+h,x,y,r);this.arcTo(x,y,x+w,y,r);this.closePath();return this}}
-const APP_VER='2.6';
+const APP_VER='2.8';
 const IOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 const LOGO_A="data:image/jpeg;base64,";
 const LOGO_B="data:image/jpeg;base64,";
@@ -590,7 +594,9 @@ async function makeThumb(p){
 }
 $('qSave').onclick=()=>{const p=photos[cur];if(p&&!p.done)run([p])};
 $('cam2').onchange=e=>{const fs=[...e.target.files];e.target.value='';if(!fs.length)return;const src=photos[cur];addFiles(fs,{fromCam:true,copy:src});if(ST().keepOrig&&!IOS)saveOrig(fs)};
-$('cam').addEventListener('click',fold);$('cam3').addEventListener('click',fold);
+$('cam').addEventListener('click',fold);$('cam3').addEventListener('click',fold);$('cam4').addEventListener('click',fold);$('cam5').addEventListener('click',fold);
+$('cam5').onchange=e=>{const fs=[...e.target.files];e.target.value='';if(!fs.length)return;const src=photos[cur];addFiles(fs,{fromCam:true,copy:src});if(ST().keepOrig&&!IOS)saveOrig(fs);setTimeout(()=>{try{$('prev').scrollIntoView({behavior:'smooth',block:'start'})}catch(e){}},300)};
+$('cam4').onchange=e=>{const fs=[...e.target.files];e.target.value='';if(!fs.length)return;addFiles(fs,{fromCam:true});if(ST().keepOrig&&!IOS)saveOrig(fs);setTimeout(()=>{try{$('prev').scrollIntoView({behavior:'smooth',block:'start'})}catch(e){}},300)};
 $('cam3').onchange=e=>{const fs=[...e.target.files];e.target.value='';if(!fs.length)return;addFiles(fs,{fromCam:true});if(ST().keepOrig&&!IOS)saveOrig(fs)};$('pick').addEventListener('click',fold);$('cam2').addEventListener('click',fold);
 $('cam').onchange=e=>{const fs=[...e.target.files];e.target.value='';if(!fs.length)return;addFiles(fs,{fromCam:true});if(ST().keepOrig&&!IOS)saveOrig(fs)};
 async function saveOrig(fs){
@@ -622,6 +628,7 @@ function drawStrip(){
     d.onclick=e=>{if(e.target.classList.contains('x')){photos.splice(i,1);DB.del(p.id);if(bmpCache.id===p.id)bmpCache={id:null,bmp:null};cur=Math.min(cur,photos.length-1);saveCur();drawAll();return}cur=i;saveCur();drawAll()};
     s.appendChild(d)});
   const has=photos.length>0;$('saveOne').disabled=!has;$('saveAll').disabled=!has;
+  $('qSame2').style.display=photos[cur]?'':'none';
   {const p=photos[cur];$('qbar').classList.toggle('show',!!p);if(p){$('qSave').disabled=!!p.done;$('qSave').textContent=p.done?'✓ 已儲存':'💾 儲存'}}
   $('saveAll').textContent=photos.length>1?`全部輸出（${photos.length}）`:'全部輸出';
   $('prevB').disabled=cur<=0;$('nextB').disabled=cur>=photos.length-1;
@@ -638,7 +645,8 @@ function compTokens(k,c){const cfg=FCFG(k),t=[];if(!cfg||!c)return t;if(c.raw)t.
   else (c.items||[]).forEach((x,i)=>t.push({lab:[x.p,x.s].filter(Boolean).join('｜'),rm:()=>c.items.splice(i,1)}));
   return t;}
 const editP=()=>{const p=photos[cur];return p&&!p.done?p:null};
-const pinned=()=>!!(S.pin&&S.pin[S.tpl]);
+const PIN={};
+const pinned=()=>!!PIN[S.tpl];
 function getComp(k){const p=editP();return clone(p?(p.comp||{})[k]:S.lastc[S.tpl][k])}
 function curText(k){const p=editP();return p?(p.f[k]||''):(S.last[S.tpl][k]||'')}
 function unlock(p){if(!p)return;p.done=false;p.cache=null;persist(p,true);drawAll()}
@@ -741,7 +749,7 @@ function drawForm(){
       w.querySelector('[data-a=add]').onclick=()=>{const v=inp.value.trim();if(!v)return toast('先輸入內容');const a=S.chips[S.tpl][f.k]=S.chips[S.tpl][f.k]||[];if(!a.includes(v))a.unshift(v);save();drawForm();toast('已加入快速選項')};
     }
     w.querySelector('[data-a=mg]').onclick=()=>{manage[f.k]=!manage[f.k];ORD={};drawForm();if(manage[f.k])toast('點選項＝★置頂（再點取消），點 ×＝刪除')};
-    const pb=w.querySelector('[data-a=pin]');if(pb)pb.onclick=()=>{S.pin=S.pin||{};S.pin[S.tpl]=!pinned();save();drawForm();toast(pinned()?'缺失已固定：之後每張都會帶入':'已取消固定：每張重新填')};
+    const pb=w.querySelector('[data-a=pin]');if(pb)pb.onclick=()=>{PIN[S.tpl]=!pinned();drawForm();toast(pinned()?'缺失已固定：之後每張都會帶入':'已取消固定：每張重新填')};
     F.appendChild(w);
   }
   F.querySelectorAll('.gs').forEach(e=>{if(sl[e.dataset.id])e.scrollLeft=sl[e.dataset.id]});
@@ -887,7 +895,7 @@ function loadZip(){return window.JSZip?Promise.resolve():new Promise((res,rej)=>
 let rmTarget=null,rmSkip=false;
 function needRemind(){const p=photos[cur];return ST().remind!==false&&p&&!p.done}
 function openCam(inp){rmSkip=true;try{inp.click()}finally{setTimeout(()=>rmSkip=false,0)}}
-['cam','cam3','cam2'].forEach(id=>$(id).addEventListener('click',e=>{if(rmSkip||!needRemind())return;e.preventDefault();e.stopImmediatePropagation();rmTarget=$(id);$('rmd').classList.add('show')},true));
+['cam','cam3','cam4','cam2','cam5'].forEach(id=>$(id).addEventListener('click',e=>{if(rmSkip||!needRemind())return;e.preventDefault();e.stopImmediatePropagation();rmTarget=$(id);$('rmd').classList.add('show')},true));
 $('rmX').onclick=()=>{$('rmd').classList.remove('show');rmTarget=null};
 $('rmGo').onclick=()=>{$('rmd').classList.remove('show');if(rmTarget)openCam(rmTarget);rmTarget=null};
 $('rmSave').onclick=async()=>{$('rmd').classList.remove('show');const t=rmTarget;rmTarget=null;const p=photos[cur];if(!p)return;
